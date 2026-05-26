@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Bolão Copa 2026 🏆</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FFD700">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bolão 2026">
+<link rel="apple-touch-icon" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -86,6 +92,14 @@ button:active{opacity:.7}
     <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
       <div class="label" style="margin-bottom:8px">PRIVACIDADE</div>
       <p style="font-size:13px;color:#888;line-height:1.6">👁️ Os palpites dos outros participantes ficam ocultos até o início do jogo. Após o bloqueio, todos podem ver os palpites de todos.</p>
+    </div>
+    <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
+      <div class="label" style="margin-bottom:8px">PALPITE DO CAMPEÃO</div>
+      <p style="font-size:13px;color:#888;line-height:1.6">🏆 Cada participante escolhe um país para ser o campeão da Copa. Se acertar, ganha <b style="color:#FFD700">30 pts</b> de bônus. O palpite fica bloqueado no início do 1º jogo.</p>
+    </div>
+    <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
+      <div class="label" style="margin-bottom:8px">FASE ELIMINATÓRIA</div>
+      <p style="font-size:13px;color:#888;line-height:1.6">⚽ Os 32 jogos da fase eliminatória (Fase 32, Oitavas, Quartas, Semifinal e Final) também pontuam com as mesmas regras. Os times de cada jogo são definidos pelo admin conforme os classificados.</p>
     </div>
     <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:16px">
       <div class="label" style="margin-bottom:8px">ACESSO</div>
@@ -180,6 +194,31 @@ const BASE_MATCHES = [
   [71,"Argélia","Áustria","27/06","23:00","D",3],[72,"Jordânia","Argentina","27/06","23:00","D",3],
 ].map(([id,home,away,date,time,group,rodada])=>({id,home,away,date,time,group,rodada,homeFlag:fl(home),awayFlag:fl(away),realHome:null,realAway:null}));
 
+const KNOCKOUT_PHASES = [
+  {code:"R32",label:"Fase 32"},{code:"R16",label:"Oitavas"},
+  {code:"QF",label:"Quartas"},{code:"SF",label:"Semifinal"},
+  {code:"3P",label:"3º Lugar"},{code:"F",label:"🏆 Final"},
+];
+const BASE_KNOCKOUT = [
+  {id:101,phase:"R32",date:"29/06",time:"12:00"},{id:102,phase:"R32",date:"29/06",time:"16:00"},
+  {id:103,phase:"R32",date:"29/06",time:"20:00"},{id:104,phase:"R32",date:"29/06",time:"23:00"},
+  {id:105,phase:"R32",date:"30/06",time:"12:00"},{id:106,phase:"R32",date:"30/06",time:"16:00"},
+  {id:107,phase:"R32",date:"30/06",time:"20:00"},{id:108,phase:"R32",date:"30/06",time:"23:00"},
+  {id:109,phase:"R32",date:"01/07",time:"12:00"},{id:110,phase:"R32",date:"01/07",time:"16:00"},
+  {id:111,phase:"R32",date:"01/07",time:"20:00"},{id:112,phase:"R32",date:"01/07",time:"23:00"},
+  {id:113,phase:"R32",date:"02/07",time:"12:00"},{id:114,phase:"R32",date:"02/07",time:"16:00"},
+  {id:115,phase:"R32",date:"02/07",time:"20:00"},{id:116,phase:"R32",date:"02/07",time:"23:00"},
+  {id:117,phase:"R16",date:"04/07",time:"12:00"},{id:118,phase:"R16",date:"04/07",time:"20:00"},
+  {id:119,phase:"R16",date:"05/07",time:"12:00"},{id:120,phase:"R16",date:"05/07",time:"20:00"},
+  {id:121,phase:"R16",date:"06/07",time:"12:00"},{id:122,phase:"R16",date:"06/07",time:"20:00"},
+  {id:123,phase:"R16",date:"07/07",time:"12:00"},{id:124,phase:"R16",date:"07/07",time:"20:00"},
+  {id:125,phase:"QF",date:"11/07",time:"16:00"},{id:126,phase:"QF",date:"11/07",time:"22:00"},
+  {id:127,phase:"QF",date:"12/07",time:"16:00"},{id:128,phase:"QF",date:"12/07",time:"22:00"},
+  {id:129,phase:"SF",date:"15/07",time:"22:00"},{id:130,phase:"SF",date:"16/07",time:"22:00"},
+  {id:131,phase:"3P",date:"18/07",time:"14:00"},
+  {id:132,phase:"F",date:"19/07",time:"17:00"},
+].map(m=>({...m,home:"?",away:"?",homeFlag:"🏳️",awayFlag:"🏳️",realHome:null,realAway:null}));
+
 const ICONS = ['🦁','🐯','🦊','🐺','🐻','🐼','🦋','🦅','🦈','🐬','🐉','🦄','🦓','🐘','🦀','🐸','🐧','🦉',
                '🔥','⚡','💎','👑','🌟','🚀','💀','🎭','🎸','🎮','😎','🤩','💪','🏆','⚽','🥊','🎯','🏄'];
 let selectedIcon = '';
@@ -190,6 +229,7 @@ const av = p => p.icon
 // ── Estado global ─────────────────────────────────────────────────────────
 let players = [];
 let matches = JSON.parse(JSON.stringify(BASE_MATCHES));
+let knockoutMatches = JSON.parse(JSON.stringify(BASE_KNOCKOUT));
 let guesses = {};
 let currentPlayer = null;
 let adminUnlocked = false;
@@ -198,6 +238,10 @@ let adminFilter = "Todos";
 let myPlayerId = localStorage.getItem('bcp_me');
 let pendingPlayerId = null;
 let editingPlayerId = null;
+let rawKnockoutTeams = {};
+let rawResults = {};
+let championGuesses = {};
+let realChampion = null;
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -234,36 +278,78 @@ function isLocked(m) {
   const [hour, min] = m.time.split(':').map(Number);
   return Date.now() >= Date.UTC(2026, month - 1, day, hour + 3, min);
 }
-function playerTotalPts(pid) {
-  return matches.reduce((a,m)=>{ const g=guesses[pid]?.[m.id]; return g?a+calcPts(g,m):a; },0);
+function isChampionLocked() { return Date.now() >= Date.UTC(2026, 5, 11, 19, 0); }
+function champPts(pid) { return (realChampion && championGuesses[pid] === realChampion) ? 30 : 0; }
+function playerStats(pid) {
+  const pg = guesses[pid] || {};
+  const all = [...matches, ...knockoutMatches].filter(m => m.realHome !== null && pg[m.id]);
+  return {
+    total: all.length,
+    exact:  all.filter(m => calcPts(pg[m.id],m)===10).length,
+    draw:   all.filter(m => calcPts(pg[m.id],m)===7).length,
+    winner: all.filter(m => calcPts(pg[m.id],m)===5).length,
+    wrong:  all.filter(m => calcPts(pg[m.id],m)===0).length,
+  };
 }
-function playerFilled(pid) { return matches.filter(m=>guesses[pid]?.[m.id]).length; }
+function rebuildKnockout() {
+  knockoutMatches = BASE_KNOCKOUT.map(m => {
+    const home = rawKnockoutTeams[m.id]?.home || "?";
+    const away = rawKnockoutTeams[m.id]?.away || "?";
+    return { ...m, home, away,
+      homeFlag: home!=="?" ? fl(home) : "🏳️",
+      awayFlag: away!=="?" ? fl(away) : "🏳️",
+      realHome: rawResults[m.id]?.home ?? null,
+      realAway: rawResults[m.id]?.away ?? null,
+    };
+  });
+}
+function playerTotalPts(pid) {
+  const pg = guesses[pid] || {};
+  return [...matches,...knockoutMatches].reduce((a,m)=>{ const g=pg[m.id]; return g?a+calcPts(g,m):a; },0) + champPts(pid);
+}
+function playerFilled(pid) {
+  const pg = guesses[pid] || {};
+  return [...matches,...knockoutMatches].filter(m=>pg[m.id]).length;
+}
 
 // ── Firebase listeners ────────────────────────────────────────────────────
+function rerender(screens) {
+  screens.forEach(s => {
+    if(document.getElementById("screen-"+s).classList.contains("active"))
+      ({home:renderHome,game:renderGame,ranking:renderRanking,admin:renderAdmin})[s]();
+  });
+}
 function initFirebase() {
-  // Jogadores
   db.ref("players").on("value", snap => {
     players = snap.val() ? Object.values(snap.val()) : [];
-    if(document.getElementById("screen-home").classList.contains("active")) renderHome();
-    if(document.getElementById("screen-ranking").classList.contains("active")) renderRanking();
+    rerender(["home","ranking"]);
   });
-  // Palpites
   db.ref("guesses").on("value", snap => {
     guesses = snap.val() || {};
-    if(document.getElementById("screen-ranking").classList.contains("active")) renderRanking();
-    if(document.getElementById("screen-home").classList.contains("active")) renderHome();
+    rerender(["home","game","ranking"]);
   });
-  // Resultados
   db.ref("results").on("value", snap => {
-    const results = snap.val() || {};
+    rawResults = snap.val() || {};
     matches = BASE_MATCHES.map(m => ({
       ...m,
-      realHome: results[m.id]?.home ?? null,
-      realAway: results[m.id]?.away ?? null,
+      realHome: rawResults[m.id]?.home ?? null,
+      realAway: rawResults[m.id]?.away ?? null,
     }));
-    if(document.getElementById("screen-game").classList.contains("active")) renderGame();
-    if(document.getElementById("screen-ranking").classList.contains("active")) renderRanking();
-    if(document.getElementById("screen-home").classList.contains("active")) renderHome();
+    rebuildKnockout();
+    rerender(["home","game","ranking","admin"]);
+  });
+  db.ref("knockout_teams").on("value", snap => {
+    rawKnockoutTeams = snap.val() || {};
+    rebuildKnockout();
+    rerender(["game","admin"]);
+  });
+  db.ref("champion_guesses").on("value", snap => {
+    championGuesses = snap.val() || {};
+    rerender(["game","ranking"]);
+  });
+  db.ref("champion").on("value", snap => {
+    realChampion = snap.val() || null;
+    rerender(["game","ranking","admin"]);
   });
 }
 
@@ -359,48 +445,144 @@ function renderGame() {
   const isMyScreen = !myPlayerId || currentPlayer.id === myPlayerId;
   const saved = guesses[currentPlayer.id] || {};
   const pts = playerTotalPts(currentPlayer.id);
-  const groups = ["Todos",...Array.from(new Set(matches.map(m=>m.group))).sort()];
-  const visible = gameFilter==="Todos" ? matches : matches.filter(m=>m.group===gameFilter);
-  const groupBtns = groups.map(g=>`<button class="group-btn${gameFilter===g?" active":""}" onclick="setGameFilter('${g}')">${g==="Todos"?"Todos":"G"+g}</button>`).join("");
 
-  let cards = "";
-  visible.forEach(m => {
-    const g = saved[m.id];
-    const locked = isLocked(m);
-    const canSee = isMyScreen || locked;
-    const hval = canSee && g!==undefined ? g.home : "";
-    const aval = canSee && g!==undefined ? g.away : "";
-    let resultHTML = "";
-    if(m.realHome!==null && canSee && g!==undefined) {
-      const s = calcPts(g,m);
-      const colors = {10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"};
-      const labels = {10:"🎯 Placar exato! +10pts",7:"✅ Empate certo! +7pts",5:"✅ Vencedor certo +5pts",0:"❌ Errou"};
-      resultHTML = `<div style="margin-top:7px;font-size:11px;color:#555;text-align:center">Placar real: <b style="color:#fff">${m.realHome} × ${m.realAway}</b> <span style="color:${colors[s]};margin-left:6px">${labels[s]}</span></div>`;
+  // ── Filtros ──
+  const isKO = KNOCKOUT_PHASES.some(p=>p.code===gameFilter);
+  const groups = Array.from(new Set(matches.map(m=>m.group))).sort();
+  const allFilters = [
+    {code:"Todos",label:"Todos"},{code:"Sem palpite",label:"Sem palpite"},
+    ...groups.map(g=>({code:g,label:"G"+g})),
+    ...KNOCKOUT_PHASES.map(p=>({code:p.code,label:p.label})),
+  ];
+  const groupBtns = allFilters.map(f=>
+    `<button class="group-btn${gameFilter===f.code?" active":""}" onclick="setGameFilter('${f.code}')">${f.label}</button>`
+  ).join("");
+
+  let visible;
+  if(gameFilter==="Todos") visible = matches;
+  else if(gameFilter==="Sem palpite") {
+    const gMiss = matches.filter(m=>!saved[m.id]&&!isLocked(m));
+    const kMiss = knockoutMatches.filter(m=>m.home!=="?"&&m.away!=="?"&&!saved[m.id]&&!isLocked(m));
+    visible = [...gMiss,...kMiss];
+  } else if(isKO) visible = knockoutMatches.filter(m=>m.phase===gameFilter);
+  else visible = matches.filter(m=>m.group===gameFilter);
+
+  // ── Palpite do campeão ──
+  const myChamp = championGuesses[currentPlayer.id];
+  const champLocked = isChampionLocked();
+  let champHTML = "";
+  if(isMyScreen || myChamp) {
+    let champContent;
+    if(champLocked) {
+      const cp = champPts(currentPlayer.id);
+      const result = realChampion
+        ? `<span style="color:${cp?'#00e676':'#ff5252'};font-weight:900;margin-left:auto">${cp?'🎯 +30pts':'❌ 0pts'}</span>`
+        : (realChampion===null?'':'');
+      champContent = `<div style="display:flex;align-items:center;gap:10px">
+        ${myChamp?`${fl(myChamp)}<span style="font-weight:700">${myChamp}</span>`:'<span style="color:#555">Sem palpite</span>'}
+        <span class="locked-badge" style="margin-left:4px">🔒 ENCERRADO</span>
+        ${realChampion?`<span style="font-size:12px;color:#555;margin-left:4px">Real: <b style="color:#fff">${realChampion}</b></span>`:''}
+        ${result}
+      </div>`;
+    } else if(isMyScreen) {
+      champContent = `<div style="display:flex;gap:8px;align-items:center">
+        <select id="champ-select" class="inp" style="flex:1;padding:10px 12px;font-size:13px">
+          <option value="">Selecione o campeão...</option>
+          ${Object.keys(ISO).sort().map(t=>`<option value="${t}"${myChamp===t?' selected':''}>${t}</option>`).join('')}
+        </select>
+        <button onclick="saveChampion()" class="btn btn-green" style="font-size:13px;white-space:nowrap;padding:0 14px">💾</button>
+      </div>`;
+    } else {
+      champContent = myChamp
+        ? `<div style="display:flex;align-items:center;gap:8px">${fl(myChamp)}<span style="font-weight:700">${myChamp}</span><span class="locked-badge">🔒 aguardando resultado</span></div>`
+        : '<span style="color:#555;font-size:13px">Sem palpite</span>';
     }
-    const bl = m.realHome!==null && canSee && g!==undefined
-      ? `border-left:3px solid ${{10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"}[calcPts(g,m)]}`
-      : locked ? "border-left:3px solid #2a2a2a" : "";
-    const inputDisabled = locked || !isMyScreen;
-    cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
-        <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span>
-        <span>${m.date} ${m.time}${locked?` <span class="locked-badge">🔒 ENCERRADO</span>`:""}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px">
-        <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${m.home}</span></div>
-        <div style="display:flex;align-items:center;gap:5px">
-          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
-          <span style="color:#333;font-weight:700">×</span>
-          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
-        </div>
-        <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${m.away}</span><span style="font-size:20px">${m.awayFlag}</span></div>
-      </div>
-      ${resultHTML}
+    champHTML = `<div class="card">
+      <div class="label">🏆 PALPITE DO CAMPEÃO <span style="font-size:10px;font-weight:400;color:#555">• +30 pts se acertar</span></div>
+      ${champContent}
     </div>`;
-  });
+  }
 
-  const gameEl = document.getElementById("screen-game");
-  gameEl.innerHTML = `
+  // ── Estatísticas ──
+  const st = playerStats(currentPlayer.id);
+  let statsHTML = "";
+  if(isMyScreen && st.total > 0) {
+    const maxPts = st.total * 10;
+    const pct = Math.round(pts / maxPts * 100);
+    statsHTML = `<div class="card">
+      <div class="label">📊 ESTATÍSTICAS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:#0d1525;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:24px;font-weight:900;color:#FFD700">${st.exact}</div>
+          <div style="font-size:10px;color:#555;margin-top:2px">🎯 Placar exato</div>
+        </div>
+        <div style="background:#0d1525;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:24px;font-weight:900;color:#69f0ae">${st.draw}</div>
+          <div style="font-size:10px;color:#555;margin-top:2px">✅ Empate certo</div>
+        </div>
+        <div style="background:#0d1525;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:24px;font-weight:900;color:#b2ff59">${st.winner}</div>
+          <div style="font-size:10px;color:#555;margin-top:2px">✅ Vencedor certo</div>
+        </div>
+        <div style="background:#0d1525;border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:24px;font-weight:900;color:#ff5252">${st.wrong}</div>
+          <div style="font-size:10px;color:#555;margin-top:2px">❌ Errou</div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:12px;color:#555">${st.total} jogo(s) apurado(s) • Aproveitamento: <b style="color:#FFD700">${pct}%</b></div>
+    </div>`;
+  }
+
+  // ── Cards de jogos ──
+  const COLORS = {10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"};
+  const LABELS = {10:"🎯 Placar exato! +10pts",7:"✅ Empate certo! +7pts",5:"✅ Vencedor certo +5pts",0:"❌ Errou"};
+  let cards = "";
+  const koAllPending = isKO && visible.length > 0 && visible.every(m=>m.home==="?"||m.away==="?");
+  if(!koAllPending) {
+    visible.forEach(m => {
+      const g = saved[m.id];
+      const locked = isLocked(m);
+      const canSee = isMyScreen || locked;
+      const teamsSet = !m.phase || (m.home!=="?"&&m.away!=="?");
+      const hval = canSee&&g!==undefined ? g.home : "";
+      const aval = canSee&&g!==undefined ? g.away : "";
+      let resultHTML = "";
+      if(m.realHome!==null && canSee) {
+        const s = g!==undefined ? calcPts(g,m) : null;
+        resultHTML = `<div style="margin-top:7px;font-size:11px;color:#555;text-align:center">
+          Placar real: <b style="color:#fff">${m.realHome} × ${m.realAway}</b>
+          ${s!==null?`<span style="color:${COLORS[s]};margin-left:6px">${LABELS[s]}</span>`:'<span style="color:#444;margin-left:6px">— sem palpite</span>'}
+        </div>`;
+      }
+      const bl = (m.realHome!==null&&g!==undefined) ? `border-left:3px solid ${COLORS[calcPts(g,m)]}`
+        : (locked||m.realHome!==null) ? "border-left:3px solid #2a2a2a" : "";
+      const inputDisabled = !teamsSet||locked||!isMyScreen;
+      const phaseLabel = m.phase
+        ? `${KNOCKOUT_PHASES.find(p=>p.code===m.phase)?.label||m.phase}`
+        : `Grupo ${m.group} • R${m.rodada}`;
+      const homeD = m.home==="?"?"A definir":m.home;
+      const awayD = m.away==="?"?"A definir":m.away;
+      cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
+          <span style="color:#FFD700;font-weight:700">${phaseLabel}</span>
+          <span>${m.date} ${m.time}${locked?` <span class="locked-badge">🔒 ENCERRADO</span>`:""}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${homeD}</span></div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
+            <span style="color:#333;font-weight:700">×</span>
+            <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${awayD}</span><span style="font-size:20px">${m.awayFlag}</span></div>
+        </div>
+        ${resultHTML}
+      </div>`;
+    });
+  }
+
+  const noMatches = visible.length === 0;
+  document.getElementById("screen-game").innerHTML = `
     <div class="screen">
       <div class="header">
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
@@ -409,18 +591,19 @@ function renderGame() {
           <div style="color:${isMyScreen?'#FFD700':'#555'};font-size:12px;font-weight:600">${isMyScreen?pts+' pts acumulados':'somente visualização'}</div>
         </div>
       </div>
+      ${champHTML}
+      ${statsHTML}
       <div class="groups-scroll">${groupBtns}</div>
+      ${koAllPending?'<div style="text-align:center;color:#444;padding:40px 0;font-size:13px">⏳ Times ainda não definidos pelo admin</div>':''}
+      ${noMatches&&gameFilter==="Sem palpite"?'<div style="text-align:center;color:#555;padding:40px 0;font-size:13px">✅ Todos os palpites disponíveis já foram preenchidos!</div>':''}
       ${cards}
-      ${isMyScreen ? `
+      ${isMyScreen&&!koAllPending&&!noMatches?`
         <button class="btn-gold" onclick="saveGuesses()">💾 Salvar Palpites</button>
         <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;font-size:11px;color:#444">
           <span>🎯 Placar exato = <b style="color:#aaa">10pts</b></span>
           <span>✅ Empate certo = <b style="color:#aaa">7pts</b></span>
           <span>✅ Vencedor certo = <b style="color:#aaa">5pts</b></span>
-        </div>` : `
-        <p style="text-align:center;color:#444;font-size:12px;margin-top:20px;padding:0 20px">
-          Palpites de jogos não iniciados estão ocultos
-        </p>`}
+        </div>`:(!isMyScreen?`<p style="text-align:center;color:#444;font-size:12px;margin-top:20px;padding:0 20px">Palpites de jogos não iniciados estão ocultos</p>`:'')}
     </div>`;
 }
 
@@ -435,9 +618,11 @@ window.saveGuesses = async function() {
     if(!toSave[mid]) toSave[mid] = {};
     toSave[mid][side] = inp.value;
   });
-  const filled = Object.entries(toSave).filter(([mid,g])=>
-    g.home!==""&&g.away!==""&&!isLocked(matches.find(m=>m.id===+mid))
-  );
+  const allM = [...matches,...knockoutMatches];
+  const filled = Object.entries(toSave).filter(([mid,g])=>{
+    const m = allM.find(m=>m.id===+mid);
+    return m && g.home!=="" && g.away!=="" && !isLocked(m) && m.home!=="?" && m.away!=="?";
+  });
   if(!filled.length) { showToast("Preencha pelo menos um palpite disponível!","err"); return; }
   const updates = {};
   filled.forEach(([id,g]) => { updates[`guesses/${currentPlayer.id}/${id}`] = {home:+g.home, away:+g.away}; });
@@ -446,23 +631,38 @@ window.saveGuesses = async function() {
   goTo("home");
 };
 
+window.saveChampion = async function() {
+  if(!currentPlayer) return;
+  const v = document.getElementById("champ-select")?.value;
+  if(!v) { showToast("Selecione um país!","err"); return; }
+  await db.ref(`champion_guesses/${currentPlayer.id}`).set(v);
+  showToast(`Palpite do campeão: ${v} 🏆`);
+};
+
 // ── RANKING ───────────────────────────────────────────────────────────────
 function renderRanking() {
   const played = matches.filter(m=>m.realHome!==null).length;
   const medals = ["🥇","🥈","🥉"];
   const ranking = players.map(p=>({...p,pts:playerTotalPts(p.id)})).sort((a,b)=>b.pts-a.pts);
+  const guessableTotal = matches.length + knockoutMatches.filter(m=>m.home!=="?"&&m.away!=="?").length;
   let rows = ranking.length===0
     ? `<div style="text-align:center;color:#333;padding:60px">Nenhum participante ainda</div>`
-    : ranking.map((p,i)=>`
-      <div class="match-card" style="display:flex;align-items:center;gap:12px;${i===0?"border:1px solid #FFD700;background:#181400":""}">
+    : ranking.map((p,i)=>{
+      const champ = championGuesses[p.id];
+      const cp = champPts(p.id);
+      return `<div class="match-card" style="display:flex;align-items:center;gap:12px;${i===0?"border:1px solid #FFD700;background:#181400":""}">
         <span style="font-size:26px;width:32px;text-align:center">${medals[i]||`${i+1}º`}</span>
         ${av(p)}
-        <span style="flex:1;font-weight:700;font-size:15px">${p.name}</span>
-        <div style="text-align:right">
-          <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
-          <div style="font-size:10px;color:#444">${playerFilled(p.id)}/72 palpites</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:15px">${p.name}</div>
+          ${champ?`<div style="font-size:10px;color:#555;margin-top:2px">🏆 ${champ}${cp?` <span style="color:#00e676">+30pts</span>`:''}</div>`:''}
         </div>
-      </div>`).join("");
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
+          <div style="font-size:10px;color:#444">${playerFilled(p.id)}/${guessableTotal} palpites</div>
+        </div>
+      </div>`;
+    }).join("");
 
   document.getElementById("screen-ranking").innerHTML = `
     <div class="screen">
@@ -470,7 +670,7 @@ function renderRanking() {
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
         <div style="font-weight:800;font-size:18px">🏅 Ranking</div>
       </div>
-      <p style="color:#444;text-align:center;font-size:12px;margin-bottom:16px"><span class="live-dot"></span>${played}/72 jogos apurados • atualização em tempo real</p>
+      <p style="color:#444;text-align:center;font-size:12px;margin-bottom:16px"><span class="live-dot"></span>${played + knockoutMatches.filter(m=>m.realHome!==null).length}/${matches.length+knockoutMatches.length} jogos apurados • atualização em tempo real</p>
       ${rows}
     </div>`;
 }
@@ -494,6 +694,7 @@ function renderAdmin() {
       </div>`;
     return;
   }
+  const guessableTotal = matches.length + knockoutMatches.filter(m=>m.home!=="?"&&m.away!=="?").length;
   const playersMgmt = players.length === 0 ? "" : `
     <div class="card">
       <div class="label">PARTICIPANTES</div>
@@ -515,46 +716,108 @@ function renderAdmin() {
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           ${av(p)}
           <span style="flex:1;font-weight:600">${p.name}</span>
-          <span style="font-size:11px;color:#444">${playerFilled(p.id)}/72</span>
+          <span style="font-size:11px;color:#444">${playerFilled(p.id)}/${guessableTotal}</span>
           <button onclick="editPlayer('${p.id}')" style="background:#1a2540;border:none;border-radius:8px;color:#aaa;padding:5px 10px;font-size:14px;cursor:pointer">✏️</button>
           <button onclick="deletePlayer('${p.id}','${p.name.replace(/'/g,"\\'")}')" style="background:#c62828;border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
         </div>`;
       }).join('')}
     </div>`;
+
+  // ── Campeão ──
+  const champCard = `<div class="card">
+    <div class="label">🏆 CAMPEÃO REAL</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input class="inp" id="admin-champ" list="admin-teams-dl" value="${realChampion||''}" placeholder="País campeão..." style="flex:1"/>
+      <button onclick="saveRealChampion()" class="btn btn-green" style="font-size:18px">✓</button>
+    </div>
+    ${realChampion?`<div style="margin-top:8px;font-size:13px;color:#555">Atual: <b style="color:#00e676">${realChampion}</b></div>`:''}
+  </div>`;
+
+  // ── Resultados grupos ──
   const groups = ["Todos",...Array.from(new Set(matches.map(m=>m.group))).sort()];
-  const visible = adminFilter==="Todos" ? matches : matches.filter(m=>m.group===adminFilter);
+  const visibleG = adminFilter==="Todos" ? matches : matches.filter(m=>m.group===adminFilter);
   const groupBtns = groups.map(g=>`<button class="group-btn${adminFilter===g?" active":""}" onclick="setAdminFilter('${g}')">${g==="Todos"?"Todos":"G"+g}</button>`).join("");
-  let cards = "";
-  visible.forEach(m => {
-    const hval = m.realHome!==null ? m.realHome : "";
-    const aval = m.realAway!==null ? m.realAway : "";
-    cards += `<div class="match-card">
+  let groupCards = "";
+  visibleG.forEach(m => {
+    groupCards += `<div class="match-card">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
         <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span><span>${m.date} ${m.time}</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
         <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${m.home}</span></div>
         <div style="display:flex;align-items:center;gap:5px">
-          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
           <span style="color:#333;font-weight:700">×</span>
-          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
         </div>
         <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${m.away}</span><span style="font-size:20px">${m.awayFlag}</span></div>
       </div>
     </div>`;
   });
-  const adminEl = document.getElementById("screen-admin");
-  adminEl.innerHTML = `
+
+  // ── Times da fase eliminatória ──
+  const teamsCard = `<div class="card">
+    <div class="label">FASE ELIMINATÓRIA — DEFINIR TIMES</div>
+    ${KNOCKOUT_PHASES.map(ph=>{
+      const phM = knockoutMatches.filter(m=>m.phase===ph.code);
+      return `<div style="margin-bottom:14px">
+        <div style="font-size:11px;color:#FFD700;font-weight:700;letter-spacing:1px;margin-bottom:6px">${ph.label}</div>
+        ${phM.map(m=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+          <span style="font-size:10px;color:#444;width:42px;flex-shrink:0">${m.date}</span>
+          <input class="inp" data-kid="${m.id}" data-side="home" value="${m.home==='?'?'':m.home}" placeholder="Time A..." list="admin-teams-dl" style="flex:1;font-size:12px;padding:8px 10px"/>
+          <span style="color:#333;font-size:12px">×</span>
+          <input class="inp" data-kid="${m.id}" data-side="away" value="${m.away==='?'?'':m.away}" placeholder="Time B..." list="admin-teams-dl" style="flex:1;font-size:12px;padding:8px 10px"/>
+        </div>`).join('')}
+      </div>`;
+    }).join('')}
+    <datalist id="admin-teams-dl">
+      ${Object.keys(ISO).sort().map(t=>`<option value="${t}">`).join('')}
+    </datalist>
+    <button class="btn-gold" onclick="saveKnockoutTeams()">💾 Salvar Times</button>
+  </div>`;
+
+  // ── Resultados fase eliminatória ──
+  const koWithTeams = knockoutMatches.filter(m=>m.home!=="?"&&m.away!=="?");
+  let koResultCards = "";
+  koWithTeams.forEach(m => {
+    const ph = KNOCKOUT_PHASES.find(p=>p.code===m.phase);
+    koResultCards += `<div class="match-card">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
+        <span style="color:#FFD700;font-weight:700">${ph?.label||m.phase} • ${m.date}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${m.home}</span></div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <input class="score-inp" data-krid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+          <span style="color:#333;font-weight:700">×</span>
+          <input class="score-inp" data-krid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${m.away}</span><span style="font-size:20px">${m.awayFlag}</span></div>
+      </div>
+    </div>`;
+  });
+  const koResultsCard = `<div class="card">
+    <div class="label">FASE ELIMINATÓRIA — RESULTADOS</div>
+    ${koWithTeams.length===0
+      ? '<p style="color:#444;font-size:12px;text-align:center;padding:12px">Defina os times primeiro</p>'
+      : koResultCards + '<button class="btn-gold" onclick="saveKnockoutResults()">💾 Salvar Resultados Eliminatória</button>'}
+  </div>`;
+
+  document.getElementById("screen-admin").innerHTML = `
     <div class="screen">
       <div class="header">
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
         <div style="font-weight:800;font-size:18px">⚙️ Admin</div>
       </div>
       ${playersMgmt}
-      <div class="label" style="margin-bottom:10px">INSERIR RESULTADOS</div>
+      ${champCard}
+      <div class="label" style="margin-bottom:10px">RESULTADOS — GRUPOS</div>
       <div class="groups-scroll">${groupBtns}</div>
-      ${cards}
-      <button class="btn-gold" onclick="saveResults()">💾 Salvar Resultados</button>
+      ${groupCards}
+      <button class="btn-gold" onclick="saveGroupResults()">💾 Salvar Resultados Grupos</button>
+      <div style="margin-top:24px"></div>
+      ${teamsCard}
+      ${koResultsCard}
     </div>`;
 }
 
@@ -596,16 +859,48 @@ window.savePlayerIcon = async function(id, icon) {
   showToast("Ícone atualizado! ✅");
 };
 
-window.saveResults = async function() {
-  const inputs = document.querySelectorAll("#screen-admin .score-inp");
+window.saveGroupResults = async function() {
+  const inputs = document.querySelectorAll("#screen-admin [data-mid]");
   const updates = {};
   inputs.forEach(inp => {
     const mid = +inp.dataset.mid, side = inp.dataset.side;
     if(inp.value!=="") updates[`results/${mid}/${side}`] = +inp.value;
   });
+  if(!Object.keys(updates).length) { showToast("Nenhum resultado para salvar!","err"); return; }
   await db.ref().update(updates);
   showToast("Resultados salvos! ✅");
-  goTo("home");
+};
+
+window.saveKnockoutTeams = async function() {
+  const inputs = document.querySelectorAll("#screen-admin [data-kid]");
+  const updates = {};
+  inputs.forEach(inp => {
+    const kid = +inp.dataset.kid, side = inp.dataset.side;
+    const v = inp.value.trim();
+    if(v) updates[`knockout_teams/${kid}/${side}`] = v;
+  });
+  if(!Object.keys(updates).length) { showToast("Preencha ao menos um time!","err"); return; }
+  await db.ref().update(updates);
+  showToast("Times salvos! ✅");
+};
+
+window.saveKnockoutResults = async function() {
+  const inputs = document.querySelectorAll("#screen-admin [data-krid]");
+  const updates = {};
+  inputs.forEach(inp => {
+    const mid = +inp.dataset.krid, side = inp.dataset.side;
+    if(inp.value!=="") updates[`results/${mid}/${side}`] = +inp.value;
+  });
+  if(!Object.keys(updates).length) { showToast("Nenhum resultado para salvar!","err"); return; }
+  await db.ref().update(updates);
+  showToast("Resultados eliminatória salvos! ✅");
+};
+
+window.saveRealChampion = async function() {
+  const v = document.getElementById("admin-champ").value.trim();
+  if(!v) { showToast("Informe o país campeão!","err"); return; }
+  await db.ref("champion").set(v);
+  showToast("Campeão registrado! 🏆");
 };
 
 // ── Modal de regras ───────────────────────────────────────────────────────
@@ -633,6 +928,9 @@ window.viewOnly = function() {
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 initFirebase();
 renderHome();
 </script>
