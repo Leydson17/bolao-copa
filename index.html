@@ -10,21 +10,37 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:hidden;max-width:100vw}
-body{background:#0a0f1e;color:#fff;font-family:'Inter',sans-serif;min-height:100vh}
+body{
+  background-color:#040d16;
+  background-image:
+    radial-gradient(ellipse 160% 55% at 50% -10%, rgba(0,190,65,.22) 0%, transparent 100%),
+    radial-gradient(ellipse 70% 90% at -8% 30%, rgba(255,215,0,.09) 0%, transparent 100%),
+    radial-gradient(ellipse 70% 90% at 108% 30%, rgba(255,215,0,.09) 0%, transparent 100%),
+    radial-gradient(ellipse 130% 55% at 50% 115%, rgba(0,70,20,.3) 0%, transparent 100%);
+  color:#fff;font-family:'Inter',sans-serif;min-height:100vh
+}
+.card{background:rgba(15,22,38,.9);border-radius:16px;padding:18px 16px;margin-bottom:14px;border:1px solid rgba(255,255,255,.07);box-shadow:0 4px 24px rgba(0,0,0,.3)}
+@keyframes spinSlow{to{transform:rotate(360deg)}}
+@keyframes riseBall{
+  0%{transform:translateY(0) rotate(0deg);opacity:0}
+  8%{opacity:.045}
+  92%{opacity:.045}
+  100%{transform:translateY(-110vh) rotate(600deg);opacity:0}
+}
 input,select,textarea{outline:none;font-family:'Inter',sans-serif;font-size:16px}
 input:focus,select:focus{border-color:#FFD700!important}
 button{cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s}
 button:active{opacity:.7}
 img{max-width:100%;height:auto}
 .screen{max-width:480px;margin:0 auto;padding:20px 16px 80px}
-.card{background:#131929;border-radius:16px;padding:18px 16px;margin-bottom:14px;border:1px solid #1a2540}
+.match-card{background:rgba(15,22,38,.88)!important;border-color:rgba(255,255,255,.07)!important}
 .label{font-size:11px;font-weight:700;letter-spacing:2px;color:#FFD700;margin-bottom:10px}
-.inp{background:#0d1525;border:1px solid #1a2540;border-radius:10px;padding:11px 14px;color:#fff;font-size:16px;width:100%}
+.inp{background:rgba(8,16,32,.9);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px;color:#fff;font-size:16px;width:100%}
 .btn{border:none;border-radius:10px;padding:11px 0;font-size:14px;font-weight:600}
 .btn-green{background:#00e676;color:#000;width:46px;font-size:22px}
 .btn-outline{background:transparent;border:1px solid #1a2540;color:#a8b8c8;flex:1}
 .btn-gold{background:#FFD700;color:#000;width:100%;font-size:16px;font-weight:800;padding:14px 0;border-radius:10px;border:none;margin-top:20px}
-.player-btn{display:flex;align-items:center;gap:10px;background:#0d1525;border:1px solid #1a2540;border-radius:10px;padding:10px 14px;color:#fff;width:100%;text-align:left;margin-bottom:8px;min-width:0}
+.player-btn{display:flex;align-items:center;gap:10px;background:rgba(8,16,32,.85);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px;color:#fff;width:100%;text-align:left;margin-bottom:8px;min-width:0}
 .avatar{width:34px;height:34px;background:#FFD700;color:#000;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0}
 .header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #1a2540;min-width:0}
 .header>div{min-width:0;flex:1}
@@ -53,6 +69,14 @@ img{max-width:100%;height:auto}
 </style>
 </head>
 <body>
+<div style="position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden">
+  <span style="position:absolute;font-size:260px;opacity:.028;top:-60px;left:-70px;animation:spinSlow 70s linear infinite">⚽</span>
+  <span style="position:absolute;font-size:180px;opacity:.028;bottom:-50px;right:-60px;animation:spinSlow 55s linear infinite reverse">⚽</span>
+  <span style="position:absolute;font-size:110px;opacity:.035;top:42%;right:2%;animation:spinSlow 45s linear infinite">🏆</span>
+  <span style="position:absolute;font-size:90px;opacity:.028;top:18%;left:3%;animation:spinSlow 60s linear infinite reverse">⭐</span>
+  <span style="position:absolute;font-size:70px;opacity:.025;bottom:22%;left:6%;animation:spinSlow 50s linear infinite">🌟</span>
+  <span style="position:absolute;font-size:80px;opacity:.022;top:65%;right:8%;animation:spinSlow 65s linear infinite reverse">⚽</span>
+</div>
 <div id="app">
   <div id="screen-home" class="active"></div>
   <div id="screen-game"></div>
