@@ -14,28 +14,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{overflow-x:hidden;max-width:100vw}
 body{background:#0a0f1e;color:#fff;font-family:'Inter',sans-serif;min-height:100vh}
-input{outline:none;font-family:'Inter',sans-serif}
-input:focus{border-color:#FFD700!important}
+input,select,textarea{outline:none;font-family:'Inter',sans-serif;font-size:16px}
+input:focus,select:focus{border-color:#FFD700!important}
 button{cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s}
 button:active{opacity:.7}
+img{max-width:100%;height:auto}
 .screen{max-width:480px;margin:0 auto;padding:20px 16px 80px}
 .card{background:#131929;border-radius:16px;padding:18px 16px;margin-bottom:14px;border:1px solid #1a2540}
 .label{font-size:11px;font-weight:700;letter-spacing:2px;color:#FFD700;margin-bottom:10px}
-.inp{background:#0d1525;border:1px solid #1a2540;border-radius:10px;padding:11px 14px;color:#fff;font-size:15px;width:100%}
+.inp{background:#0d1525;border:1px solid #1a2540;border-radius:10px;padding:11px 14px;color:#fff;font-size:16px;width:100%}
 .btn{border:none;border-radius:10px;padding:11px 0;font-size:14px;font-weight:600}
 .btn-green{background:#00e676;color:#000;width:46px;font-size:22px}
 .btn-outline{background:transparent;border:1px solid #1a2540;color:#888;flex:1}
 .btn-gold{background:#FFD700;color:#000;width:100%;font-size:16px;font-weight:800;padding:14px 0;border-radius:10px;border:none;margin-top:20px}
-.player-btn{display:flex;align-items:center;gap:10px;background:#0d1525;border:1px solid #1a2540;border-radius:10px;padding:10px 14px;color:#fff;width:100%;text-align:left;margin-bottom:8px}
+.player-btn{display:flex;align-items:center;gap:10px;background:#0d1525;border:1px solid #1a2540;border-radius:10px;padding:10px 14px;color:#fff;width:100%;text-align:left;margin-bottom:8px;min-width:0}
 .avatar{width:34px;height:34px;background:#FFD700;color:#000;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0}
-.header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #1a2540}
-.back-btn{background:none;border:1px solid #1a2540;border-radius:8px;color:#777;padding:6px 12px;font-size:16px}
-.match-card{background:#131929;border-radius:14px;padding:12px;border:1px solid #1a2540;margin-bottom:10px}
-.score-inp{width:38px;height:38px;background:#0d1525;border:1px solid #1a2540;border-radius:8px;color:#FFD700;font-size:17px;font-weight:700;text-align:center}
+.header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #1a2540;min-width:0}
+.header>div{min-width:0;flex:1}
+.back-btn{background:none;border:1px solid #1a2540;border-radius:8px;color:#777;padding:6px 12px;font-size:16px;flex-shrink:0}
+.match-card{background:#131929;border-radius:14px;padding:12px;border:1px solid #1a2540;margin-bottom:10px;overflow:hidden}
+.score-inp{width:38px;height:38px;background:#0d1525;border:1px solid #1a2540;border-radius:8px;color:#FFD700;font-size:17px;font-weight:700;text-align:center;flex-shrink:0}
 .group-btn{background:#131929;color:#666;border:1px solid #1a2540;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .group-btn.active{background:#FFD700;color:#000}
-.groups-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;margin-bottom:4px}
+.groups-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+.team-side{flex:1;display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden}
+.team-name{font-size:11px;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:30px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
 .loading{display:flex;align-items:center;justify-content:center;gap:10px;color:#555;font-size:14px;padding:40px 0}
 #app>div{display:none}
@@ -565,16 +570,16 @@ function renderGame() {
       cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
           <span style="color:#FFD700;font-weight:700">${phaseLabel}</span>
-          <span>${m.date} ${m.time}${locked?` <span class="locked-badge">🔒 ENCERRADO</span>`:""}</span>
+          <span style="flex-shrink:0;margin-left:4px">${m.date} ${m.time}${locked?` <span class="locked-badge">🔒</span>`:""}</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px">
-          <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${homeD}</span></div>
-          <div style="display:flex;align-items:center;gap:5px">
+          <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${homeD}</span></div>
+          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
             <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
             <span style="color:#333;font-weight:700">×</span>
             <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
           </div>
-          <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${awayD}</span><span style="font-size:20px">${m.awayFlag}</span></div>
+          <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${awayD}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
         </div>
         ${resultHTML}
       </div>`;
@@ -744,13 +749,13 @@ function renderAdmin() {
         <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span><span>${m.date} ${m.time}</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
-        <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${m.home}</span></div>
-        <div style="display:flex;align-items:center;gap:5px">
+        <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${m.home}</span></div>
+        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
           <input class="score-inp" data-mid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
           <span style="color:#333;font-weight:700">×</span>
           <input class="score-inp" data-mid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
         </div>
-        <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${m.away}</span><span style="font-size:20px">${m.awayFlag}</span></div>
+        <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${m.away}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
       </div>
     </div>`;
   });
@@ -786,13 +791,13 @@ function renderAdmin() {
         <span style="color:#FFD700;font-weight:700">${ph?.label||m.phase} • ${m.date}</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
-        <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${m.home}</span></div>
-        <div style="display:flex;align-items:center;gap:5px">
+        <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${m.home}</span></div>
+        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
           <input class="score-inp" data-krid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
           <span style="color:#333;font-weight:700">×</span>
           <input class="score-inp" data-krid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
         </div>
-        <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${m.away}</span><span style="font-size:20px">${m.awayFlag}</span></div>
+        <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${m.away}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
       </div>
     </div>`;
   });
