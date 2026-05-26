@@ -155,6 +155,7 @@ let gameFilter = "Todos";
 let adminFilter = "Todos";
 let myPlayerId = localStorage.getItem('bcp_me');
 let pendingPlayerId = null;
+let editingPlayerId = null;
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -453,13 +454,29 @@ function renderAdmin() {
   const playersMgmt = players.length === 0 ? "" : `
     <div class="card">
       <div class="label">PARTICIPANTES</div>
-      ${players.map(p=>`
+      ${players.map(p => {
+        const isEditing = editingPlayerId === p.id;
+        return isEditing ? `
+        <div style="margin-bottom:12px;background:#0d1525;border-radius:12px;padding:12px;border:1px solid #FFD700">
+          <div style="font-size:11px;color:#FFD700;font-weight:700;letter-spacing:1px;margin-bottom:8px">EDITANDO: ${p.name}</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input class="inp" id="ename-${p.id}" value="${p.name.replace(/"/g,'&quot;')}" style="flex:1" onkeydown="if(event.key==='Enter')savePlayerName('${p.id}')"/>
+            <button onclick="savePlayerName('${p.id}')" style="background:#00e676;border:none;border-radius:8px;color:#000;padding:0 12px;font-size:18px;font-weight:900;cursor:pointer">✓</button>
+            <button onclick="editPlayer('${p.id}')" style="background:#1a2540;border:none;border-radius:8px;color:#666;padding:0 12px;font-size:16px;cursor:pointer">✕</button>
+          </div>
+          <div style="font-size:11px;color:#555;margin-bottom:6px">Trocar ícone:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            ${ICONS.map(ic=>`<button onclick="savePlayerIcon('${p.id}','${ic}')" style="width:30px;height:30px;font-size:16px;background:${p.icon===ic?'#2a2200':'#131929'};border:1px solid ${p.icon===ic?'#FFD700':'#1a2540'};border-radius:6px;cursor:pointer">${ic}</button>`).join('')}
+          </div>
+        </div>` : `
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           ${av(p)}
           <span style="flex:1;font-weight:600">${p.name}</span>
           <span style="font-size:11px;color:#444">${playerFilled(p.id)}/72</span>
+          <button onclick="editPlayer('${p.id}')" style="background:#1a2540;border:none;border-radius:8px;color:#aaa;padding:5px 10px;font-size:14px;cursor:pointer">✏️</button>
           <button onclick="deletePlayer('${p.id}','${p.name.replace(/'/g,"\\'")}')" style="background:#c62828;border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>`;
   const groups = ["Todos",...Array.from(new Set(matches.map(m=>m.group))).sort()];
   const visible = adminFilter==="Todos" ? matches : matches.filter(m=>m.group===adminFilter);
@@ -512,6 +529,28 @@ window.deletePlayer = async function(id, name) {
   if(myPlayerId === id) { myPlayerId = null; localStorage.removeItem('bcp_me'); }
   showToast(`${name} removido do bolão`);
   renderAdmin();
+};
+
+window.editPlayer = function(id) {
+  editingPlayerId = editingPlayerId === id ? null : id;
+  renderAdmin();
+};
+
+window.savePlayerName = async function(id) {
+  const newName = document.getElementById(`ename-${id}`).value.trim();
+  if(!newName) { showToast("Nome não pode ser vazio!", "err"); return; }
+  if(players.find(p=>p.id!==id && p.name.toLowerCase()===newName.toLowerCase())) {
+    showToast("Nome já existe!", "err"); return;
+  }
+  await db.ref(`players/${id}/name`).set(newName);
+  editingPlayerId = null;
+  showToast("Nome atualizado! ✅");
+};
+
+window.savePlayerIcon = async function(id, icon) {
+  await db.ref(`players/${id}/icon`).set(icon);
+  editingPlayerId = null;
+  showToast("Ícone atualizado! ✅");
 };
 
 window.saveResults = async function() {
