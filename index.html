@@ -135,6 +135,7 @@ let currentPlayer = null;
 let adminUnlocked = false;
 let gameFilter = "Todos";
 let adminFilter = "Todos";
+let myPlayerId = localStorage.getItem('bcp_me');
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -253,11 +254,13 @@ window.addPlayer = async function() {
   if(players.find(p=>p.name.toLowerCase()===name.toLowerCase())) { showToast("Nome já existe!","err"); return; }
   const id = "p_"+Date.now();
   await db.ref(`players/${id}`).set({id, name});
+  if(!myPlayerId) { myPlayerId = id; localStorage.setItem('bcp_me', id); }
   inp.value = "";
   showToast(`${name} entrou no bolão! 🎉`);
 };
 
 window.selectPlayer = function(id) {
+  if(!myPlayerId) { myPlayerId = id; localStorage.setItem('bcp_me', id); }
   currentPlayer = players.find(p=>p.id===id);
   gameFilter = "Todos";
   goTo("game");
@@ -266,6 +269,7 @@ window.selectPlayer = function(id) {
 // ── GAME ──────────────────────────────────────────────────────────────────
 function renderGame() {
   if(!currentPlayer) return;
+  const isMyScreen = !myPlayerId || currentPlayer.id === myPlayerId;
   const saved = guesses[currentPlayer.id] || {};
   const pts = playerTotalPts(currentPlayer.id);
   const groups = ["Todos",...Array.from(new Set(matches.map(m=>m.group))).sort()];
@@ -275,19 +279,21 @@ function renderGame() {
   let cards = "";
   visible.forEach(m => {
     const g = saved[m.id];
-    const hval = g!==undefined ? g.home : "";
-    const aval = g!==undefined ? g.away : "";
     const locked = isLocked(m);
+    const canSee = isMyScreen || locked;
+    const hval = canSee && g!==undefined ? g.home : "";
+    const aval = canSee && g!==undefined ? g.away : "";
     let resultHTML = "";
-    if(m.realHome!==null && g!==undefined) {
+    if(m.realHome!==null && canSee && g!==undefined) {
       const s = calcPts(g,m);
       const colors = {10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"};
       const labels = {10:"🎯 Placar exato! +10pts",7:"✅ Empate certo! +7pts",5:"✅ Vencedor certo +5pts",0:"❌ Errou"};
       resultHTML = `<div style="margin-top:7px;font-size:11px;color:#555;text-align:center">Placar real: <b style="color:#fff">${m.realHome} × ${m.realAway}</b> <span style="color:${colors[s]};margin-left:6px">${labels[s]}</span></div>`;
     }
-    const bl = m.realHome!==null&&g!==undefined
+    const bl = m.realHome!==null && canSee && g!==undefined
       ? `border-left:3px solid ${{10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"}[calcPts(g,m)]}`
       : locked ? "border-left:3px solid #2a2a2a" : "";
+    const inputDisabled = locked || !isMyScreen;
     cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
         <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span>
@@ -296,9 +302,9 @@ function renderGame() {
       <div style="display:flex;align-items:center;gap:4px">
         <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${m.home}</span></div>
         <div style="display:flex;align-items:center;gap:5px">
-          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="0" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${locked?" disabled":""}/>
+          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
           <span style="color:#333;font-weight:700">×</span>
-          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="0" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${locked?" disabled":""}/>
+          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
         </div>
         <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${m.away}</span><span style="font-size:20px">${m.awayFlag}</span></div>
       </div>
@@ -311,16 +317,23 @@ function renderGame() {
     <div class="screen">
       <div class="header">
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
-        <div><div style="font-weight:800;font-size:18px">${currentPlayer.name}</div><div style="color:#FFD700;font-size:12px;font-weight:600">${pts} pts acumulados</div></div>
+        <div>
+          <div style="font-weight:800;font-size:18px">${isMyScreen?'':' 👁️ '}${currentPlayer.name}</div>
+          <div style="color:${isMyScreen?'#FFD700':'#555'};font-size:12px;font-weight:600">${isMyScreen?pts+' pts acumulados':'somente visualização'}</div>
+        </div>
       </div>
       <div class="groups-scroll">${groupBtns}</div>
       ${cards}
-      <button class="btn-gold" onclick="saveGuesses()">💾 Salvar Palpites</button>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;font-size:11px;color:#444">
-        <span>🎯 Placar exato = <b style="color:#aaa">10pts</b></span>
-        <span>✅ Empate certo = <b style="color:#aaa">7pts</b></span>
-        <span>✅ Vencedor certo = <b style="color:#aaa">5pts</b></span>
-      </div>
+      ${isMyScreen ? `
+        <button class="btn-gold" onclick="saveGuesses()">💾 Salvar Palpites</button>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;font-size:11px;color:#444">
+          <span>🎯 Placar exato = <b style="color:#aaa">10pts</b></span>
+          <span>✅ Empate certo = <b style="color:#aaa">7pts</b></span>
+          <span>✅ Vencedor certo = <b style="color:#aaa">5pts</b></span>
+        </div>` : `
+        <p style="text-align:center;color:#444;font-size:12px;margin-top:20px;padding:0 20px">
+          Palpites de jogos não iniciados estão ocultos
+        </p>`}
     </div>`;
 }
 
@@ -360,7 +373,7 @@ function renderRanking() {
         <span style="flex:1;font-weight:700;font-size:15px">${p.name}</span>
         <div style="text-align:right">
           <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
-          <div style="font-size:10px;color:#444">pontos</div>
+          <div style="font-size:10px;color:#444">${playerFilled(p.id)}/72 palpites</div>
         </div>
       </div>`).join("");
 
@@ -395,6 +408,17 @@ function renderAdmin() {
       </div>`;
     return;
   }
+  const playersMgmt = players.length === 0 ? "" : `
+    <div class="card">
+      <div class="label">PARTICIPANTES</div>
+      ${players.map(p=>`
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span class="avatar">${p.name[0].toUpperCase()}</span>
+          <span style="flex:1;font-weight:600">${p.name}</span>
+          <span style="font-size:11px;color:#444">${playerFilled(p.id)}/72</span>
+          <button onclick="deletePlayer('${p.id}','${p.name.replace(/'/g,"\\'")}')" style="background:#c62828;border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
+        </div>`).join('')}
+    </div>`;
   const groups = ["Todos",...Array.from(new Set(matches.map(m=>m.group))).sort()];
   const visible = adminFilter==="Todos" ? matches : matches.filter(m=>m.group===adminFilter);
   const groupBtns = groups.map(g=>`<button class="group-btn${adminFilter===g?" active":""}" onclick="setAdminFilter('${g}')">${g==="Todos"?"Todos":"G"+g}</button>`).join("");
@@ -422,8 +446,10 @@ function renderAdmin() {
     <div class="screen">
       <div class="header">
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
-        <div style="font-weight:800;font-size:18px">⚙️ Inserir Resultados</div>
+        <div style="font-weight:800;font-size:18px">⚙️ Admin</div>
       </div>
+      ${playersMgmt}
+      <div class="label" style="margin-bottom:10px">INSERIR RESULTADOS</div>
       <div class="groups-scroll">${groupBtns}</div>
       ${cards}
       <button class="btn-gold" onclick="saveResults()">💾 Salvar Resultados</button>
@@ -437,6 +463,14 @@ window.tryAdmin = function() {
 };
 
 window.setAdminFilter = function(g) { adminFilter=g; renderAdmin(); };
+
+window.deletePlayer = async function(id, name) {
+  await db.ref(`players/${id}`).remove();
+  await db.ref(`guesses/${id}`).remove();
+  if(myPlayerId === id) { myPlayerId = null; localStorage.removeItem('bcp_me'); }
+  showToast(`${name} removido do bolão`);
+  renderAdmin();
+};
 
 window.saveResults = async function() {
   const inputs = document.querySelectorAll("#screen-admin .score-inp");
