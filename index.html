@@ -583,9 +583,9 @@ function renderGame() {
         <div style="display:flex;align-items:center;gap:4px">
           <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${homeD}</span></div>
           <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-            <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
+            <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
             <span style="color:#4a5a6e;font-weight:700">×</span>
-            <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
+            <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
           </div>
           <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${awayD}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
         </div>
@@ -611,14 +611,31 @@ function renderGame() {
       ${noMatches&&gameFilter==="Sem palpite"?'<div style="text-align:center;color:#8896a8;padding:40px 0;font-size:13px">✅ Todos os palpites disponíveis já foram preenchidos!</div>':''}
       ${cards}
       ${isMyScreen&&!koAllPending&&!noMatches?`
-        <button class="btn-gold" onclick="saveGuesses()">💾 Salvar Palpites</button>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;font-size:11px;color:#6b7a8c">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;font-size:11px;color:#6b7a8c">
           <span>🎯 Placar exato = <b style="color:#aaa">10pts</b></span>
           <span>✅ Empate certo = <b style="color:#aaa">7pts</b></span>
           <span>✅ Vencedor certo = <b style="color:#aaa">5pts</b></span>
         </div>`:(!isMyScreen?`<p style="text-align:center;color:#6b7a8c;font-size:12px;margin-top:20px;padding:0 20px">Palpites de jogos não iniciados estão ocultos</p>`:'')}
     </div>`;
 }
+
+window.autoSaveGuess = async function(mid) {
+  if(!currentPlayer) return;
+  if(myPlayerId && currentPlayer.id !== myPlayerId) return;
+  const hi = document.querySelector(`.score-inp[data-mid="${mid}"][data-side="home"]`);
+  const ai = document.querySelector(`.score-inp[data-mid="${mid}"][data-side="away"]`);
+  if(!hi || !ai || hi.value === "" || ai.value === "") return;
+  const m = [...matches,...knockoutMatches].find(m=>m.id===mid);
+  if(!m || isLocked(m) || m.home==="?" || m.away==="?") return;
+  const prev = guesses[currentPlayer.id]?.[mid];
+  if(prev && prev.home===+hi.value && prev.away===+ai.value) return;
+  await db.ref(`guesses/${currentPlayer.id}/${mid}`).set({home:+hi.value, away:+ai.value});
+  const card = hi.closest('.match-card');
+  if(card) {
+    card.style.outline = '2px solid #00e676';
+    setTimeout(()=>{ card.style.outline=''; }, 1200);
+  }
+};
 
 window.setGameFilter = function(g) {
   const sy = window.scrollY;
