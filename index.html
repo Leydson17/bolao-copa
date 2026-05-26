@@ -27,7 +27,7 @@ img{max-width:100%;height:auto}
 .inp{background:#0d1525;border:1px solid #1a2540;border-radius:10px;padding:11px 14px;color:#fff;font-size:16px;width:100%}
 .btn{border:none;border-radius:10px;padding:11px 0;font-size:14px;font-weight:600}
 .btn-green{background:#00e676;color:#000;width:46px;font-size:22px}
-.btn-outline{background:transparent;border:1px solid #1a2540;color:#888;flex:1}
+.btn-outline{background:transparent;border:1px solid #1a2540;color:#a8b8c8;flex:1}
 .btn-gold{background:#FFD700;color:#000;width:100%;font-size:16px;font-weight:800;padding:14px 0;border-radius:10px;border:none;margin-top:20px}
 .player-btn{display:flex;align-items:center;gap:10px;background:#0d1525;border:1px solid #1a2540;border-radius:10px;padding:10px 14px;color:#fff;width:100%;text-align:left;margin-bottom:8px;min-width:0}
 .avatar{width:34px;height:34px;background:#FFD700;color:#000;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0}
@@ -42,7 +42,7 @@ img{max-width:100%;height:auto}
 .team-side{flex:1;display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden}
 .team-name{font-size:11px;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:30px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
-.loading{display:flex;align-items:center;justify-content:center;gap:10px;color:#555;font-size:14px;padding:40px 0}
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;color:#a8b8c8;font-size:14px;padding:40px 0}
 #app>div{display:none}
 #app>div.active{display:block}
 ::-webkit-scrollbar{width:4px}
@@ -52,7 +52,7 @@ img{max-width:100%;height:auto}
 .live-dot{width:7px;height:7px;background:#00e676;border-radius:50%;display:inline-block;margin-right:5px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .score-inp:disabled{opacity:.35;cursor:not-allowed}
-.locked-badge{font-size:10px;color:#555;font-weight:700;letter-spacing:1px}
+.locked-badge{font-size:10px;color:#7a8aa8;font-weight:700;letter-spacing:1px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9998}
 .modal-box{background:#131929;border-radius:16px;padding:24px 20px;width:90%;max-width:340px;border:1px solid #1a2540}
 </style>
@@ -69,58 +69,69 @@ img{max-width:100%;height:auto}
   <div class="modal-box" style="max-height:85vh;overflow-y:auto;max-width:400px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div style="font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px">📋 Regras do Bolão</div>
-      <button onclick="closeRules()" style="background:none;border:none;color:#555;font-size:22px;cursor:pointer">✕</button>
+      <button onclick="closeRules()" style="background:none;border:none;color:#8896a8;font-size:22px;cursor:pointer">✕</button>
     </div>
     <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
       <div class="label" style="margin-bottom:10px">PONTUAÇÃO</div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a2540">
         <span style="font-size:13px;color:#ccc">🎯 Placar exato</span>
-        <span style="font-weight:900;color:#FFD700;font-size:20px">10<span style="font-size:11px;font-weight:400;color:#555"> pts</span></span>
+        <span style="font-weight:900;color:#FFD700;font-size:20px">10<span style="font-size:11px;font-weight:400;color:#8896a8"> pts</span></span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a2540">
         <span style="font-size:13px;color:#ccc">✅ Empate certo</span>
-        <span style="font-weight:900;color:#69f0ae;font-size:20px">7<span style="font-size:11px;font-weight:400;color:#555"> pts</span></span>
+        <span style="font-weight:900;color:#69f0ae;font-size:20px">7<span style="font-size:11px;font-weight:400;color:#8896a8"> pts</span></span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a2540">
         <span style="font-size:13px;color:#ccc">✅ Acertou o vencedor</span>
-        <span style="font-weight:900;color:#b2ff59;font-size:20px">5<span style="font-size:11px;font-weight:400;color:#555"> pts</span></span>
+        <span style="font-weight:900;color:#b2ff59;font-size:20px">5<span style="font-size:11px;font-weight:400;color:#8896a8"> pts</span></span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0">
         <span style="font-size:13px;color:#ccc">❌ Errou</span>
-        <span style="font-weight:900;color:#ff5252;font-size:20px">0<span style="font-size:11px;font-weight:400;color:#555"> pts</span></span>
+        <span style="font-weight:900;color:#ff5252;font-size:20px">0<span style="font-size:11px;font-weight:400;color:#8896a8"> pts</span></span>
       </div>
     </div>
     <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
       <div class="label" style="margin-bottom:8px">PRAZO DOS PALPITES</div>
-      <p style="font-size:13px;color:#888;line-height:1.6">🔒 Os palpites são bloqueados automaticamente no horário exato do apito inicial. Após o bloqueio não é possível alterar ou inserir novos palpites.</p>
+      <p style="font-size:13px;color:#a8b8c8;line-height:1.6">🔒 Os palpites são bloqueados automaticamente no horário exato do apito inicial. Após o bloqueio não é possível alterar ou inserir novos palpites.</p>
     </div>
     <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
       <div class="label" style="margin-bottom:8px">PRIVACIDADE</div>
-      <p style="font-size:13px;color:#888;line-height:1.6">👁️ Os palpites dos outros participantes ficam ocultos até o início do jogo. Após o bloqueio, todos podem ver os palpites de todos.</p>
+      <p style="font-size:13px;color:#a8b8c8;line-height:1.6">👁️ Os palpites dos outros participantes ficam ocultos até o início do jogo. Após o bloqueio, todos podem ver os palpites de todos.</p>
     </div>
     <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
       <div class="label" style="margin-bottom:8px">PALPITE DO CAMPEÃO</div>
-      <p style="font-size:13px;color:#888;line-height:1.6">🏆 Cada participante escolhe um país para ser o campeão da Copa. Se acertar, ganha <b style="color:#FFD700">30 pts</b> de bônus. O palpite fica bloqueado no início do 1º jogo.</p>
+      <p style="font-size:13px;color:#a8b8c8;line-height:1.6">🏆 Cada participante escolhe um país para ser o campeão da Copa. Se acertar, ganha <b style="color:#FFD700">30 pts</b> de bônus. O palpite fica bloqueado no início do 1º jogo.</p>
     </div>
     <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
       <div class="label" style="margin-bottom:8px">FASE ELIMINATÓRIA</div>
-      <p style="font-size:13px;color:#888;line-height:1.6">⚽ Os 32 jogos da fase eliminatória (Fase 32, Oitavas, Quartas, Semifinal e Final) também pontuam com as mesmas regras. Os times de cada jogo são definidos pelo admin conforme os classificados.</p>
+      <p style="font-size:13px;color:#a8b8c8;line-height:1.6">⚽ Os 32 jogos da fase eliminatória (Fase 32, Oitavas, Quartas, Semifinal e Final) também pontuam com as mesmas regras. Os times de cada jogo são definidos pelo admin conforme os classificados.</p>
     </div>
     <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:16px">
       <div class="label" style="margin-bottom:8px">ACESSO</div>
-      <p style="font-size:13px;color:#888;line-height:1.6">🔐 Cada participante cria uma senha no cadastro. A senha é necessária para inserir palpites. Sem ela, só é possível visualizar.</p>
+      <p style="font-size:13px;color:#a8b8c8;line-height:1.6">🔐 Cada participante cria uma senha no cadastro. A senha é necessária para inserir palpites. Sem ela, só é possível visualizar.</p>
     </div>
     <button onclick="closeRules()" class="btn-gold">Entendido! 👍</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-champ" style="display:none">
+  <div class="modal-box" style="max-height:80vh;display:flex;flex-direction:column;padding:16px 14px;max-width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:2px">🏆 Escolher Campeão</div>
+      <button onclick="closeChampPicker()" style="background:none;border:none;color:#8896a8;font-size:22px;cursor:pointer;padding:0 4px">✕</button>
+    </div>
+    <input class="inp" id="champ-search" placeholder="Buscar país..." oninput="filterChampList(this.value)" style="margin-bottom:10px"/>
+    <div id="champ-list" style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch"></div>
   </div>
 </div>
 
 <div class="modal-overlay" id="modal-pass" style="display:none">
   <div class="modal-box">
     <div style="font-weight:800;font-size:18px;margin-bottom:6px">🔐 Confirmar identidade</div>
-    <div id="modal-player-name" style="color:#888;font-size:13px;margin-bottom:16px"></div>
+    <div id="modal-player-name" style="color:#a8b8c8;font-size:13px;margin-bottom:16px"></div>
     <input class="inp" id="modal-pass-inp" type="password" placeholder="Sua senha..." onkeydown="if(event.key==='Enter')confirmPass()"/>
     <button class="btn-gold" style="margin-top:12px" onclick="confirmPass()">Entrar</button>
-    <button onclick="viewOnly()" style="width:100%;margin-top:10px;background:transparent;border:none;color:#555;font-size:13px;cursor:pointer;padding:8px">Só visualizar →</button>
+    <button onclick="viewOnly()" style="width:100%;margin-top:10px;background:transparent;border:none;color:#8896a8;font-size:13px;cursor:pointer;padding:8px">Só visualizar →</button>
   </div>
 </div>
 
@@ -370,7 +381,7 @@ function renderHome() {
         ${av(p)}
         <span style="flex:1;text-align:left">
           <span style="font-weight:700">${p.name}</span>
-          <span style="display:block;font-size:11px;color:#555;margin-top:1px">${filled}/72 palpites</span>
+          <span style="display:block;font-size:11px;color:#8896a8;margin-top:1px">${filled}/72 palpites</span>
         </span>
         <span style="color:#FFD700;font-weight:900;font-size:18px">${pts}<span style="font-size:11px;font-weight:400;color:#666"> pts</span></span>
         <span style="color:#333;font-size:20px;margin-left:8px">›</span>
@@ -383,7 +394,7 @@ function renderHome() {
       <div style="text-align:center;padding:36px 0 24px">
         <div style="font-size:64px;margin-bottom:8px">🏆</div>
         <div style="font-family:'Bebas Neue',cursive;font-size:52px;line-height:1;letter-spacing:2px">BOLÃO<br><span style="color:#FFD700">COPA 2026</span></div>
-        <p style="color:#555;margin-top:10px;font-size:13px">${played}/72 jogos apurados</p>
+        <p style="color:#8896a8;margin-top:10px;font-size:13px">${played}/72 jogos apurados</p>
       </div>
       <div class="card">
         <div class="label">ENTRAR NO BOLÃO</div>
@@ -484,26 +495,23 @@ function renderGame() {
         ? `<span style="color:${cp?'#00e676':'#ff5252'};font-weight:900;margin-left:auto">${cp?'🎯 +30pts':'❌ 0pts'}</span>`
         : (realChampion===null?'':'');
       champContent = `<div style="display:flex;align-items:center;gap:10px">
-        ${myChamp?`${fl(myChamp)}<span style="font-weight:700">${myChamp}</span>`:'<span style="color:#555">Sem palpite</span>'}
+        ${myChamp?`${fl(myChamp)}<span style="font-weight:700">${myChamp}</span>`:'<span style="color:#8896a8">Sem palpite</span>'}
         <span class="locked-badge" style="margin-left:4px">🔒 ENCERRADO</span>
-        ${realChampion?`<span style="font-size:12px;color:#555;margin-left:4px">Real: <b style="color:#fff">${realChampion}</b></span>`:''}
+        ${realChampion?`<span style="font-size:12px;color:#8896a8;margin-left:4px">Real: <b style="color:#fff">${realChampion}</b></span>`:''}
         ${result}
       </div>`;
     } else if(isMyScreen) {
-      champContent = `<div style="display:flex;gap:8px;align-items:center">
-        <select id="champ-select" class="inp" style="flex:1;padding:10px 12px;font-size:13px">
-          <option value="">Selecione o campeão...</option>
-          ${Object.keys(ISO).sort().map(t=>`<option value="${t}"${myChamp===t?' selected':''}>${t}</option>`).join('')}
-        </select>
-        <button onclick="saveChampion()" class="btn btn-green" style="font-size:13px;white-space:nowrap;padding:0 14px">💾</button>
-      </div>`;
+      champContent = `<button onclick="openChampPicker()" style="width:100%;background:#0d1525;border:1px solid ${myChamp?'#FFD700':'#1a2540'};border-radius:10px;padding:12px 14px;color:#fff;text-align:left;display:flex;align-items:center;gap:10px;cursor:pointer">
+        ${myChamp?`${fl(myChamp)}<span style="font-weight:700;flex:1">${myChamp}</span>`:`<span style="color:#8896a8;flex:1">Selecione o campeão...</span>`}
+        <span style="color:#8896a8;font-size:18px">›</span>
+      </button>`;
     } else {
       champContent = myChamp
         ? `<div style="display:flex;align-items:center;gap:8px">${fl(myChamp)}<span style="font-weight:700">${myChamp}</span><span class="locked-badge">🔒 aguardando resultado</span></div>`
-        : '<span style="color:#555;font-size:13px">Sem palpite</span>';
+        : '<span style="color:#8896a8;font-size:13px">Sem palpite</span>';
     }
     champHTML = `<div class="card">
-      <div class="label">🏆 PALPITE DO CAMPEÃO <span style="font-size:10px;font-weight:400;color:#555">• +30 pts se acertar</span></div>
+      <div class="label">🏆 PALPITE DO CAMPEÃO <span style="font-size:10px;font-weight:400;color:#8896a8">• +30 pts se acertar</span></div>
       ${champContent}
     </div>`;
   }
@@ -519,22 +527,22 @@ function renderGame() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
         <div style="background:#0d1525;border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:24px;font-weight:900;color:#FFD700">${st.exact}</div>
-          <div style="font-size:10px;color:#555;margin-top:2px">🎯 Placar exato</div>
+          <div style="font-size:10px;color:#8896a8;margin-top:2px">🎯 Placar exato</div>
         </div>
         <div style="background:#0d1525;border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:24px;font-weight:900;color:#69f0ae">${st.draw}</div>
-          <div style="font-size:10px;color:#555;margin-top:2px">✅ Empate certo</div>
+          <div style="font-size:10px;color:#8896a8;margin-top:2px">✅ Empate certo</div>
         </div>
         <div style="background:#0d1525;border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:24px;font-weight:900;color:#b2ff59">${st.winner}</div>
-          <div style="font-size:10px;color:#555;margin-top:2px">✅ Vencedor certo</div>
+          <div style="font-size:10px;color:#8896a8;margin-top:2px">✅ Vencedor certo</div>
         </div>
         <div style="background:#0d1525;border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:24px;font-weight:900;color:#ff5252">${st.wrong}</div>
-          <div style="font-size:10px;color:#555;margin-top:2px">❌ Errou</div>
+          <div style="font-size:10px;color:#8896a8;margin-top:2px">❌ Errou</div>
         </div>
       </div>
-      <div style="text-align:center;font-size:12px;color:#555">${st.total} jogo(s) apurado(s) • Aproveitamento: <b style="color:#FFD700">${pct}%</b></div>
+      <div style="text-align:center;font-size:12px;color:#8896a8">${st.total} jogo(s) apurado(s) • Aproveitamento: <b style="color:#FFD700">${pct}%</b></div>
     </div>`;
   }
 
@@ -554,9 +562,9 @@ function renderGame() {
       let resultHTML = "";
       if(m.realHome!==null && canSee) {
         const s = g!==undefined ? calcPts(g,m) : null;
-        resultHTML = `<div style="margin-top:7px;font-size:11px;color:#555;text-align:center">
+        resultHTML = `<div style="margin-top:7px;font-size:11px;color:#8896a8;text-align:center">
           Placar real: <b style="color:#fff">${m.realHome} × ${m.realAway}</b>
-          ${s!==null?`<span style="color:${COLORS[s]};margin-left:6px">${LABELS[s]}</span>`:'<span style="color:#444;margin-left:6px">— sem palpite</span>'}
+          ${s!==null?`<span style="color:${COLORS[s]};margin-left:6px">${LABELS[s]}</span>`:'<span style="color:#6b7a8c;margin-left:6px">— sem palpite</span>'}
         </div>`;
       }
       const bl = (m.realHome!==null&&g!==undefined) ? `border-left:3px solid ${COLORS[calcPts(g,m)]}`
@@ -568,7 +576,7 @@ function renderGame() {
       const homeD = m.home==="?"?"A definir":m.home;
       const awayD = m.away==="?"?"A definir":m.away;
       cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a8c;margin-bottom:8px">
           <span style="color:#FFD700;font-weight:700">${phaseLabel}</span>
           <span style="flex-shrink:0;margin-left:4px">${m.date} ${m.time}${locked?` <span class="locked-badge">🔒</span>`:""}</span>
         </div>
@@ -576,7 +584,7 @@ function renderGame() {
           <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${homeD}</span></div>
           <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
             <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
-            <span style="color:#333;font-weight:700">×</span>
+            <span style="color:#4a5a6e;font-weight:700">×</span>
             <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":""}/>
           </div>
           <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${awayD}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
@@ -599,20 +607,25 @@ function renderGame() {
       ${champHTML}
       ${statsHTML}
       <div class="groups-scroll">${groupBtns}</div>
-      ${koAllPending?'<div style="text-align:center;color:#444;padding:40px 0;font-size:13px">⏳ Times ainda não definidos pelo admin</div>':''}
-      ${noMatches&&gameFilter==="Sem palpite"?'<div style="text-align:center;color:#555;padding:40px 0;font-size:13px">✅ Todos os palpites disponíveis já foram preenchidos!</div>':''}
+      ${koAllPending?'<div style="text-align:center;color:#6b7a8c;padding:40px 0;font-size:13px">⏳ Times ainda não definidos pelo admin</div>':''}
+      ${noMatches&&gameFilter==="Sem palpite"?'<div style="text-align:center;color:#8896a8;padding:40px 0;font-size:13px">✅ Todos os palpites disponíveis já foram preenchidos!</div>':''}
       ${cards}
       ${isMyScreen&&!koAllPending&&!noMatches?`
         <button class="btn-gold" onclick="saveGuesses()">💾 Salvar Palpites</button>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;font-size:11px;color:#444">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;font-size:11px;color:#6b7a8c">
           <span>🎯 Placar exato = <b style="color:#aaa">10pts</b></span>
           <span>✅ Empate certo = <b style="color:#aaa">7pts</b></span>
           <span>✅ Vencedor certo = <b style="color:#aaa">5pts</b></span>
-        </div>`:(!isMyScreen?`<p style="text-align:center;color:#444;font-size:12px;margin-top:20px;padding:0 20px">Palpites de jogos não iniciados estão ocultos</p>`:'')}
+        </div>`:(!isMyScreen?`<p style="text-align:center;color:#6b7a8c;font-size:12px;margin-top:20px;padding:0 20px">Palpites de jogos não iniciados estão ocultos</p>`:'')}
     </div>`;
 }
 
-window.setGameFilter = function(g) { gameFilter=g; renderGame(); };
+window.setGameFilter = function(g) {
+  const sy = window.scrollY;
+  gameFilter = g;
+  renderGame();
+  requestAnimationFrame(() => window.scrollTo(0, sy));
+};
 
 window.saveGuesses = async function() {
   if(!currentPlayer) return;
@@ -636,13 +649,37 @@ window.saveGuesses = async function() {
   goTo("home");
 };
 
-window.saveChampion = async function() {
-  if(!currentPlayer) return;
-  const v = document.getElementById("champ-select")?.value;
-  if(!v) { showToast("Selecione um país!","err"); return; }
-  await db.ref(`champion_guesses/${currentPlayer.id}`).set(v);
-  showToast(`Palpite do campeão: ${v} 🏆`);
+function buildChampList(query) {
+  const myChamp = championGuesses[currentPlayer?.id];
+  const teams = Object.keys(ISO).sort().filter(t => !query || t.toLowerCase().includes(query.toLowerCase()));
+  const el = document.getElementById('champ-list');
+  if(!el) return;
+  el.innerHTML = teams.length === 0
+    ? '<p style="color:#8896a8;text-align:center;padding:20px">Nenhum país encontrado</p>'
+    : teams.map(t => `
+      <button onclick="pickChamp('${t}')" style="display:flex;align-items:center;gap:10px;width:100%;background:${myChamp===t?'#1a1400':'#0d1525'};border:1px solid ${myChamp===t?'#FFD700':'#1a2540'};border-radius:8px;padding:10px 12px;color:#fff;margin-bottom:6px;text-align:left;cursor:pointer">
+        <span style="flex-shrink:0">${fl(t)}</span>
+        <span style="flex:1;font-weight:${myChamp===t?'700':'400'}">${t}</span>
+        ${myChamp===t?'<span style="color:#FFD700;font-size:16px">✓</span>':''}
+      </button>`).join('');
+}
+window.openChampPicker = function() {
+  buildChampList('');
+  document.getElementById('champ-search').value = '';
+  document.getElementById('modal-champ').style.display = 'flex';
+  setTimeout(() => document.getElementById('champ-search').focus(), 150);
 };
+window.closeChampPicker = function() {
+  document.getElementById('modal-champ').style.display = 'none';
+};
+window.filterChampList = function(q) { buildChampList(q); };
+window.pickChamp = async function(team) {
+  if(!currentPlayer) return;
+  await db.ref(`champion_guesses/${currentPlayer.id}`).set(team);
+  closeChampPicker();
+  showToast(`Palpite do campeão: ${team} 🏆`);
+};
+window.saveChampion = window.pickChamp;
 
 // ── RANKING ───────────────────────────────────────────────────────────────
 function renderRanking() {
@@ -660,11 +697,11 @@ function renderRanking() {
         ${av(p)}
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:15px">${p.name}</div>
-          ${champ?`<div style="font-size:10px;color:#555;margin-top:2px">🏆 ${champ}${cp?` <span style="color:#00e676">+30pts</span>`:''}</div>`:''}
+          ${champ?`<div style="font-size:10px;color:#8896a8;margin-top:2px">🏆 ${champ}${cp?` <span style="color:#00e676">+30pts</span>`:''}</div>`:''}
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
-          <div style="font-size:10px;color:#444">${playerFilled(p.id)}/${guessableTotal} palpites</div>
+          <div style="font-size:10px;color:#6b7a8c">${playerFilled(p.id)}/${guessableTotal} palpites</div>
         </div>
       </div>`;
     }).join("");
@@ -675,7 +712,7 @@ function renderRanking() {
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
         <div style="font-weight:800;font-size:18px">🏅 Ranking</div>
       </div>
-      <p style="color:#444;text-align:center;font-size:12px;margin-bottom:16px"><span class="live-dot"></span>${played + knockoutMatches.filter(m=>m.realHome!==null).length}/${matches.length+knockoutMatches.length} jogos apurados • atualização em tempo real</p>
+      <p style="color:#6b7a8c;text-align:center;font-size:12px;margin-bottom:16px"><span class="live-dot"></span>${played + knockoutMatches.filter(m=>m.realHome!==null).length}/${matches.length+knockoutMatches.length} jogos apurados • atualização em tempo real</p>
       ${rows}
     </div>`;
 }
@@ -713,7 +750,7 @@ function renderAdmin() {
             <button onclick="savePlayerName('${p.id}')" style="background:#00e676;border:none;border-radius:8px;color:#000;padding:0 12px;font-size:18px;font-weight:900;cursor:pointer">✓</button>
             <button onclick="editPlayer('${p.id}')" style="background:#1a2540;border:none;border-radius:8px;color:#666;padding:0 12px;font-size:16px;cursor:pointer">✕</button>
           </div>
-          <div style="font-size:11px;color:#555;margin-bottom:6px">Trocar ícone:</div>
+          <div style="font-size:11px;color:#8896a8;margin-bottom:6px">Trocar ícone:</div>
           <div style="display:flex;flex-wrap:wrap;gap:4px">
             ${ICONS.map(ic=>`<button onclick="savePlayerIcon('${p.id}','${ic}')" style="width:30px;height:30px;font-size:16px;background:${p.icon===ic?'#2a2200':'#131929'};border:1px solid ${p.icon===ic?'#FFD700':'#1a2540'};border-radius:6px;cursor:pointer">${ic}</button>`).join('')}
           </div>
@@ -721,7 +758,7 @@ function renderAdmin() {
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           ${av(p)}
           <span style="flex:1;font-weight:600">${p.name}</span>
-          <span style="font-size:11px;color:#444">${playerFilled(p.id)}/${guessableTotal}</span>
+          <span style="font-size:11px;color:#6b7a8c">${playerFilled(p.id)}/${guessableTotal}</span>
           <button onclick="editPlayer('${p.id}')" style="background:#1a2540;border:none;border-radius:8px;color:#aaa;padding:5px 10px;font-size:14px;cursor:pointer">✏️</button>
           <button onclick="deletePlayer('${p.id}','${p.name.replace(/'/g,"\\'")}')" style="background:#c62828;border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
         </div>`;
@@ -735,7 +772,7 @@ function renderAdmin() {
       <input class="inp" id="admin-champ" list="admin-teams-dl" value="${realChampion||''}" placeholder="País campeão..." style="flex:1"/>
       <button onclick="saveRealChampion()" class="btn btn-green" style="font-size:18px">✓</button>
     </div>
-    ${realChampion?`<div style="margin-top:8px;font-size:13px;color:#555">Atual: <b style="color:#00e676">${realChampion}</b></div>`:''}
+    ${realChampion?`<div style="margin-top:8px;font-size:13px;color:#8896a8">Atual: <b style="color:#00e676">${realChampion}</b></div>`:''}
   </div>`;
 
   // ── Resultados grupos ──
@@ -745,14 +782,14 @@ function renderAdmin() {
   let groupCards = "";
   visibleG.forEach(m => {
     groupCards += `<div class="match-card">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a8c;margin-bottom:8px">
         <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span><span>${m.date} ${m.time}</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
         <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${m.home}</span></div>
         <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
           <input class="score-inp" data-mid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
-          <span style="color:#333;font-weight:700">×</span>
+          <span style="color:#4a5a6e;font-weight:700">×</span>
           <input class="score-inp" data-mid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
         </div>
         <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${m.away}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
@@ -768,7 +805,7 @@ function renderAdmin() {
       return `<div style="margin-bottom:14px">
         <div style="font-size:11px;color:#FFD700;font-weight:700;letter-spacing:1px;margin-bottom:6px">${ph.label}</div>
         ${phM.map(m=>`<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
-          <span style="font-size:10px;color:#444;width:42px;flex-shrink:0">${m.date}</span>
+          <span style="font-size:10px;color:#6b7a8c;width:42px;flex-shrink:0">${m.date}</span>
           <input class="inp" data-kid="${m.id}" data-side="home" value="${m.home==='?'?'':m.home}" placeholder="Time A..." list="admin-teams-dl" style="flex:1;font-size:12px;padding:8px 10px"/>
           <span style="color:#333;font-size:12px">×</span>
           <input class="inp" data-kid="${m.id}" data-side="away" value="${m.away==='?'?'':m.away}" placeholder="Time B..." list="admin-teams-dl" style="flex:1;font-size:12px;padding:8px 10px"/>
@@ -787,14 +824,14 @@ function renderAdmin() {
   koWithTeams.forEach(m => {
     const ph = KNOCKOUT_PHASES.find(p=>p.code===m.phase);
     koResultCards += `<div class="match-card">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a8c;margin-bottom:8px">
         <span style="color:#FFD700;font-weight:700">${ph?.label||m.phase} • ${m.date}</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
         <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${m.home}</span></div>
         <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
           <input class="score-inp" data-krid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
-          <span style="color:#333;font-weight:700">×</span>
+          <span style="color:#4a5a6e;font-weight:700">×</span>
           <input class="score-inp" data-krid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
         </div>
         <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${m.away}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
@@ -804,7 +841,7 @@ function renderAdmin() {
   const koResultsCard = `<div class="card">
     <div class="label">FASE ELIMINATÓRIA — RESULTADOS</div>
     ${koWithTeams.length===0
-      ? '<p style="color:#444;font-size:12px;text-align:center;padding:12px">Defina os times primeiro</p>'
+      ? '<p style="color:#6b7a8c;font-size:12px;text-align:center;padding:12px">Defina os times primeiro</p>'
       : koResultCards + '<button class="btn-gold" onclick="saveKnockoutResults()">💾 Salvar Resultados Eliminatória</button>'}
   </div>`;
 
