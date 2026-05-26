@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bolão Copa 2026 🏆</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0f1e; color: #fff; font-family: 'Inter', sans-serif; }
+    input:focus { border-color: #FFD700 !important; }
+    button:hover { opacity: 0.88; }
+    @keyframes fadeIn { from { opacity:0; transform:translateX(-50%) translateY(-8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .slide-up { animation: slideUp 0.3s ease; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0a0f1e; }
+    ::-webkit-scrollbar-thumb { background: #1e2d4a; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const INITIAL_MATCHES = [
+  { id:1,  home:"Brasil",    away:"Argentina", homeFlag:"🇧🇷", awayFlag:"🇦🇷", date:"15/06/2026", time:"16:00", group:"A", realHome:null, realAway:null },
+  { id:2,  home:"França",    away:"Alemanha",  homeFlag:"🇫🇷", awayFlag:"🇩🇪", date:"15/06/2026", time:"19:00", group:"B", realHome:null, realAway:null },
+  { id:3,  home:"Espanha",   away:"Portugal",  homeFlag:"🇪🇸", awayFlag:"🇵🇹", date:"16/06/2026", time:"16:00", group:"C", realHome:null, realAway:null },
+  { id:4,  home:"Inglaterra",away:"Itália",    homeFlag:"🏴󠁧󠁢󠁥󠁮󠁧󠁿", awayFlag:"🇮🇹", date:"16/06/2026", time:"19:00", group:"D", realHome:null, realAway:null },
+  { id:5,  home:"Uruguai",   away:"México",    homeFlag:"🇺🇾", awayFlag:"🇲🇽", date:"17/06/2026", time:"13:00", group:"E", realHome:null, realAway:null },
+  { id:6,  home:"Japão",     away:"Coreia",    homeFlag:"🇯🇵", awayFlag:"🇰🇷", date:"17/06/2026", time:"16:00", group:"F", realHome:null, realAway:null },
+  { id:7,  home:"EUA",       away:"Canadá",    homeFlag:"🇺🇸", awayFlag:"🇨🇦", date:"18/06/2026", time:"16:00", group:"G", realHome:null, realAway:null },
+  { id:8,  home:"Marrocos",  away:"Senegal",   homeFlag:"🇲🇦", awayFlag:"🇸🇳", date:"18/06/2026", time:"19:00", group:"H", realHome:null, realAway:null },
+];
+
+function calcPoints(guess, real) {
+  if (real.home === null || real.away === null) return 0;
+  if (guess.home === real.home && guess.away === real.away) return 10;
+  const gW = guess.home > guess.away ? "h" : guess.home < guess.away ? "a" : "d";
+  const rW = real.home  > real.away  ? "h" : real.home  < real.away  ? "a" : "d";
+  if (gW === rW) return rW === "d" ? 7 : 5;
+  return 0;
+}
+
+function getLabel(pts) {
+  if (pts === 10) return { text:"🎯 Placar exato!",    color:"#00e676" };
+  if (pts === 7)  return { text:"✅ Empate certo!",     color:"#69f0ae" };
+  if (pts === 5)  return { text:"✅ Vencedor certo",    color:"#b2ff59" };
+  return           { text:"❌ Errou",                  color:"#ff5252" };
+}
+
+function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+export default function App() {
+  const [screen, setScreen]   = useState("home");
+  const [players, setPlayers] = useState(() => load("bp_players", []));
+  const [matches, setMatches] = useState(() => load("bp_matches", INITIAL_MATCHES));
+  const [guesses, setGuesses] = useState(() => load("bp_guesses", {}));
+  const [current, setCurrent] = useState(null);
+  const [toast, setToast]     = useState(null);
+
+  useEffect(() => save("bp_players", players), [players]);
+  useEffect(() => save("bp_matches", matches), [matches]);
+  useEffect(() => save("bp_guesses", guesses), [guesses]);
+
+  function showToast(msg, type="ok") {
+    setToast({msg, type});
+    setTimeout(() => setToast(null), 2600);
+  }
+
+  const ranking = players.map(p => {
+    let pts=0, exact=0, winner=0;
+    matches.forEach(m => {
+      const g = guesses[p.id]?.[m.id];
+      if (!g) return;
+      const s = calcPoints(g, {home:m.realHome, away:m.realAway});
+      pts += s;
+      if (s===10) exact++;
+      else if (s>=5) winner++;
+    });
+    return {...p, pts, exact, winner};
+  }).sort((a,b) => b.pts - a.pts);
+
+  const go = (s, p=null) => { setCurrent(p); setScreen(s); };
+
+  return (
+    <div style={{minHeight:"100vh", background:"#0a0f1e", color:"#fff"}}>
+      {toast && (
+        <div style={{
+          position:"fixed", top:20, left:"50%", transform:"translateX(-50%)",
+          padding:"10px 24px", borderRadius:30, fontWeight:700,
+          color: toast.type==="ok" ? "#000" : "#fff",
+          background: toast.type==="ok" ? "#00e676" : "#e53935",
+          zIndex:9999, fontSize:14, boxShadow:"0 4px 20px rgba(0,0,0,.5)",
+          animation:"fadeIn .2s ease", whiteSpace:"nowrap"
+        }}>{toast.msg}</div>
+      )}
+      {screen==="home"    && <Home    {...{players, setPlayers, matches, guesses, go, showToast}} />}
+      {screen==="game"    && <Game    {...{current, matches, guesses, setGuesses, go, showToast}} />}
+      {screen==="ranking" && <Ranking {...{ranking, matches, go}} />}
+      {screen==="admin"   && <Admin   {...{matches, setMatches, go, showToast}} />}
+    </div>
+  );
+}
+
+/* ── HOME ── */
+function Home({players, setPlayers, matches, guesses, go, showToast}) {
+  const [name, setName] = useState("");
+
+  function add() {
+    const n = name.trim();
+    if (!n) return;
+    if (players.find(p => p.name.toLowerCase()===n.toLowerCase())) { showToast("Nome já existe!","err"); return; }
+    setPlayers(prev => [...prev, {id: Date.now(), name:n}]);
+    setName("");
+    showToast(`${n} entrou no bolão! 🎉`);
+  }
+
+  const played = matches.filter(m => m.realHome!==null).length;
+
+  return (
+    <div style={S.screen}>
+      {/* Hero */}
+      <div style={{textAlign:"center", padding:"36px 0 24px"}} className="slide-up">
+        <div style={{fontSize:64, marginBottom:8}}>🏆</div>
+        <div style={{fontFamily:"'Bebas Neue', cursive", fontSize:52, lineHeight:1, letterSpacing:2}}>
+          BOLÃO<br/><span style={{color:"#FFD700"}}>COPA 2026</span>
+        </div>
+        <p style={{color:"#666", marginTop:10, fontSize:13}}>
+          {played}/{matches.length} jogos apurados
+        </p>
+      </div>
+
+      {/* Entrar */}
+      <div style={S.card}>
+        <div style={S.label}>ENTRAR NO BOLÃO</div>
+        <div style={{display:"flex", gap:8}}>
+          <input style={S.input} placeholder="Seu nome..." value={name}
+            onChange={e=>setName(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&add()} />
+          <button style={{...S.btn, background:"#00e676", color:"#000", width:46, fontSize:22, padding:0}} onClick={add}>+</button>
+        </div>
+      </div>
+
+      {/* Participantes */}
+      {players.length > 0 && (
+        <div style={S.card}>
+          <div style={S.label}>PARTICIPANTES — clique para palpitar</div>
+          <div style={{display:"flex", flexDirection:"column", gap:8}}>
+            {players.map(p => {
+              const pts = matches.reduce((acc,m) => {
+                const g = guesses[p.id]?.[m.id];
+                return g ? acc + calcPoints(g,{home:m.realHome,away:m.realAway}) : acc;
+              }, 0);
+              const filled = matches.filter(m => guesses[p.id]?.[m.id]).length;
+              return (
+                <button key={p.id} style={S.playerBtn} onClick={()=>go("game",p)}>
+                  <span style={S.avatar}>{p.name[0].toUpperCase()}</span>
+                  <span style={{flex:1, textAlign:"left"}}>
+                    <span style={{fontWeight:700}}>{p.name}</span>
+                    <span style={{display:"block", fontSize:11, color:"#555", marginTop:1}}>
+                      {filled}/{matches.length} palpites
+                    </span>
+                  </span>
+                  <span style={{color:"#FFD700", fontWeight:900, fontSize:18}}>{pts}<span style={{fontSize:11, fontWeight:400, color:"#666"}}> pts</span></span>
+                  <span style={{color:"#333", fontSize:20, marginLeft:8}}>›</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{display:"flex", gap:10, marginTop:4}}>
+        <button style={{...S.btn, ...S.btnOutline, flex:1}} onClick={()=>go("ranking")}>🏅 Ranking</button>
+        <button style={{...S.btn, ...S.btnOutline, flex:1}} onClick={()=>go("admin")}>⚙️ Admin</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── GAME ── */
+function Game({current, matches, guesses, setGuesses, go, showToast}) {
+  const saved = guesses[current.id] || {};
+  const [drafts, setDrafts] = useState(() =>
+    Object.fromEntries(matches.map(m => [m.id, saved[m.id] ? {home:String(saved[m.id].home), away:String(saved[m.id].away)} : {home:"",away:""}]))
+  );
+
+  function set(id, side, val) {
+    setDrafts(prev => ({...prev, [id]: {...prev[id], [side]: val.replace(/\D/g,"").slice(0,2)}}));
+  }
+
+  function saveAll() {
+    const filled = Object.entries(drafts).filter(([,g]) => g.home!=="" && g.away!=="");
+    if (!filled.length) { showToast("Preencha pelo menos um palpite!","err"); return; }
+    const parsed = Object.fromEntries(filled.map(([id,g]) => [id, {home:+g.home, away:+g.away}]));
+    setGuesses(prev => ({...prev, [current.id]: {...prev[current.id], ...parsed}}));
+    showToast("Palpites salvos! ✅");
+    go("home");
+  }
+
+  const totalPts = matches.reduce((acc,m) => {
+    const g = saved[m.id];
+    return g ? acc + calcPoints(g,{home:m.realHome,away:m.realAway}) : acc;
+  }, 0);
+
+  return (
+    <div style={S.screen}>
+      <div style={S.header}>
+        <button style={S.back} onClick={()=>go("home")}>‹ Voltar</button>
+        <div>
+          <div style={{fontWeight:800, fontSize:18}}>{current.name}</div>
+          <div style={{color:"#FFD700", fontSize:12, fontWeight:600}}>{totalPts} pts acumulados</div>
+        </div>
+      </div>
+
+      <div style={{display:"flex",flexDirection:"column",gap:12}} className="slide-up">
+        {matches.map(m => {
+          const s = saved[m.id];
+          const scored = s && m.realHome!==null ? calcPoints(s,{home:m.realHome,away:m.realAway}) : null;
+          const lbl = scored!==null ? getLabel(scored) : null;
+          return (
+            <div key={m.id} style={{...S.matchCard, ...(lbl ? {borderLeft:`3px solid ${lbl.color}`} : {})}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#444",marginBottom:10}}>
+                <span style={{color:"#FFD700",fontWeight:700}}>Grupo {m.group}</span>
+                <span>{m.date} • {m.time}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <div style={{flex:1,display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:22}}>{m.homeFlag}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:"#ccc"}}>{m.home}</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <input style={S.scoreInput} value={drafts[m.id].home} onChange={e=>set(m.id,"home",e.target.value)} placeholder="0" />
+                  <span style={{color:"#333",fontWeight:700}}>×</span>
+                  <input style={S.scoreInput} value={drafts[m.id].away} onChange={e=>set(m.id,"away",e.target.value)} placeholder="0" />
+                </div>
+                <div style={{flex:1,display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end"}}>
+                  <span style={{fontSize:12,fontWeight:600,color:"#ccc"}}>{m.away}</span>
+                  <span style={{fontSize:22}}>{m.awayFlag}</span>
+                </div>
+              </div>
+              {m.realHome!==null && (
+                <div style={{marginTop:8,fontSize:11,color:"#555",textAlign:"center"}}>
+                  Placar real: <b style={{color:"#fff"}}>{m.realHome} × {m.realAway}</b>
+                  {lbl && <span style={{color:lbl.color,marginLeft:8}}>{lbl.text} <b>+{scored}pts</b></span>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <button style={{...S.btn, background:"#FFD700", color:"#000", width:"100%", marginTop:20, fontSize:16, fontWeight:800, padding:"14px 0"}} onClick={saveAll}>
+        💾 Salvar Palpites
+      </button>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center",marginTop:16,fontSize:11,color:"#444"}}>
+        <span>🎯 Placar exato = <b style={{color:"#aaa"}}>10pts</b></span>
+        <span>✅ Empate certo = <b style={{color:"#aaa"}}>7pts</b></span>
+        <span>✅ Vencedor certo = <b style={{color:"#aaa"}}>5pts</b></span>
+      </div>
+    </div>
+  );
+}
+
+/* ── RANKING ── */
+function Ranking({ranking, matches, go}) {
+  const medals = ["🥇","🥈","🥉"];
+  const played = matches.filter(m => m.realHome!==null).length;
+  return (
+    <div style={S.screen}>
+      <div style={S.header}>
+        <button style={S.back} onClick={()=>go("home")}>‹ Voltar</button>
+        <div style={{fontWeight:800,fontSize:18}}>🏅 Ranking</div>
+      </div>
+      <p style={{color:"#444",textAlign:"center",fontSize:12,marginBottom:16}}>{played}/{matches.length} jogos apurados</p>
+      {ranking.length===0
+        ? <div style={{textAlign:"center",color:"#333",padding:60}}>Nenhum participante ainda</div>
+        : <div style={{display:"flex",flexDirection:"column",gap:10}} className="slide-up">
+            {ranking.map((p,i) => (
+              <div key={p.id} style={{
+                ...S.matchCard,
+                ...(i===0 ? {border:"1px solid #FFD700", background:"#181400"} : {}),
+                display:"flex", alignItems:"center", gap:12
+              }}>
+                <span style={{fontSize:26,width:32,textAlign:"center"}}>{medals[i]||`${i+1}º`}</span>
+                <span style={S.avatar}>{p.name[0].toUpperCase()}</span>
+                <span style={{flex:1,fontWeight:700,fontSize:15}}>{p.name}</span>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:24,fontWeight:900,color:"#FFD700",lineHeight:1}}>{p.pts}</div>
+                  <div style={{fontSize:10,color:"#444"}}>pontos</div>
+                </div>
+              </div>
+            ))}
+          </div>
+      }
+    </div>
+  );
+}
+
+/* ── ADMIN ── */
+function Admin({matches, setMatches, go, showToast}) {
+  const [pass, setPass]   = useState("");
+  const [ok, setOk]       = useState(false);
+  const [res, setRes]     = useState(() =>
+    Object.fromEntries(matches.map(m => [m.id, {home: m.realHome??'', away: m.realAway??''}]))
+  );
+
+  function setR(id, side, val) {
+    setRes(prev => ({...prev, [id]: {...prev[id], [side]: val.replace(/\D/g,"").slice(0,2)}}));
+  }
+
+  function saveAll() {
+    setMatches(prev => prev.map(m => {
+      const r = res[m.id];
+      return {...m,
+        realHome: r.home!=='' ? +r.home : null,
+        realAway: r.away!=='' ? +r.away : null,
+      };
+    }));
+    showToast("Resultados salvos! ✅");
+    go("home");
+  }
+
+  if (!ok) return (
+    <div style={S.screen}>
+      <div style={S.header}>
+        <button style={S.back} onClick={()=>go("home")}>‹ Voltar</button>
+        <div style={{fontWeight:800,fontSize:18}}>⚙️ Admin</div>
+      </div>
+      <div style={S.card}>
+        <div style={S.label}>SENHA DO ADMIN</div>
+        <p style={{color:"#555",fontSize:12,marginBottom:12}}>Senha padrão: <b style={{color:"#aaa"}}>copa2026</b></p>
+        <div style={{display:"flex",gap:8}}>
+          <input style={S.input} type="password" placeholder="Senha..." value={pass}
+            onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(pass==="copa2026"?setOk(true):showToast("Senha incorreta!","err"))} />
+          <button style={{...S.btn, background:"#FFD700", color:"#000", width:46, padding:0}}
+            onClick={()=>pass==="copa2026"?setOk(true):showToast("Senha incorreta!","err")}>›</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={S.screen}>
+      <div style={S.header}>
+        <button style={S.back} onClick={()=>go("home")}>‹ Voltar</button>
+        <div style={{fontWeight:800,fontSize:18}}>⚙️ Inserir Resultados</div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:12}} className="slide-up">
+        {matches.map(m => (
+          <div key={m.id} style={S.matchCard}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#444",marginBottom:10}}>
+              <span style={{color:"#FFD700",fontWeight:700}}>Grupo {m.group}</span>
+              <span>{m.date} • {m.time}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{flex:1,display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontSize:22}}>{m.homeFlag}</span>
+                <span style={{fontSize:12,fontWeight:600,color:"#ccc"}}>{m.home}</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <input style={S.scoreInput} value={res[m.id].home} onChange={e=>setR(m.id,"home",e.target.value)} placeholder="0" />
+                <span style={{color:"#333",fontWeight:700}}>×</span>
+                <input style={S.scoreInput} value={res[m.id].away} onChange={e=>setR(m.id,"away",e.target.value)} placeholder="0" />
+              </div>
+              <div style={{flex:1,display:"flex",alignItems:"center",gap:6,justifyContent:"flex-end"}}>
+                <span style={{fontSize:12,fontWeight:600,color:"#ccc"}}>{m.away}</span>
+                <span style={{fontSize:22}}>{m.awayFlag}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button style={{...S.btn, background:"#FFD700", color:"#000", width:"100%", marginTop:20, fontSize:16, fontWeight:800, padding:"14px 0"}} onClick={saveAll}>
+        💾 Salvar Resultados
+      </button>
+    </div>
+  );
+}
+
+/* ── Styles ── */
+const S = {
+  screen: { maxWidth:480, margin:"0 auto", padding:"20px 16px 80px" },
+  card:   { background:"#131929", borderRadius:16, padding:"18px 16px", marginBottom:14, border:"1px solid #1a2540" },
+  label:  { fontSize:11, fontWeight:700, letterSpacing:2, color:"#FFD700", marginBottom:10 },
+  input:  { flex:1, background:"#0d1525", border:"1px solid #1a2540", borderRadius:10, padding:"11px 14px", color:"#fff", fontSize:15, outline:"none", width:"100%" },
+  btn:    { border:"none", borderRadius:10, padding:"11px 0", cursor:"pointer", fontSize:14, fontWeight:600, transition:"opacity .15s" },
+  btnOutline: { background:"transparent", border:"1px solid #1a2540", color:"#888" },
+  playerBtn: { display:"flex", alignItems:"center", gap:10, background:"#0d1525", border:"1px solid #1a2540", borderRadius:10, padding:"10px 14px", color:"#fff", cursor:"pointer", textAlign:"left", width:"100%", transition:"border-color .2s" },
+  avatar: { width:34, height:34, background:"#FFD700", color:"#000", borderRadius:"50%", display:"inline-flex", alignItems:"center", justifyContent:"center", fontWeight:900, fontSize:15, flexShrink:0 },
+  header: { display:"flex", alignItems:"center", gap:14, marginBottom:22, paddingBottom:16, borderBottom:"1px solid #1a2540" },
+  back:   { background:"none", border:"1px solid #1a2540", borderRadius:8, color:"#777", padding:"6px 12px", cursor:"pointer", fontSize:16 },
+  matchCard: { background:"#131929", borderRadius:14, padding:"14px 12px", border:"1px solid #1a2540" },
+  scoreInput: { width:40, height:40, background:"#0d1525", border:"1px solid #1a2540", borderRadius:8, color:"#FFD700", fontSize:18, fontWeight:700, textAlign:"center", outline:"none" },
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
