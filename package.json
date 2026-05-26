@@ -1,0 +1,9 @@
+{
+  "name": "bolao-copa-2026",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node .local-server.js",
+    "check": "node --check app.js"
+  }
+}
