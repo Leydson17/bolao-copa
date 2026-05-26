@@ -68,8 +68,23 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // ── Dados dos jogos ───────────────────────────────────────────────────────
-const FLAGS = {"México":"🇲🇽","África do Sul":"🇿🇦","Coreia do Sul":"🇰🇷","Rep. Tcheca":"🇨🇿","Canadá":"🇨🇦","Itália":"🇮🇹","Estados Unidos":"🇺🇸","Paraguai":"🇵🇾","Austrália":"🇦🇺","Turquia":"🇹🇷","Catar":"🇶🇦","Suíça":"🇨🇭","Brasil":"🇧🇷","Marrocos":"🇲🇦","Haiti":"🇭🇹","Escócia":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Alemanha":"🇩🇪","Curaçao":"🏝️","Holanda":"🇳🇱","Japão":"🇯🇵","Costa do Marfim":"🇨🇮","Equador":"🇪🇨","Tunísia":"🇹🇳","Ucrânia":"🇺🇦","Espanha":"🇪🇸","Cabo Verde":"🇨🇻","Bélgica":"🇧🇪","Egito":"🇪🇬","Arábia Saudita":"🇸🇦","Uruguai":"🇺🇾","Irã":"🇮🇷","Nova Zelândia":"🇳🇿","Argentina":"🇦🇷","Argélia":"🇩🇿","França":"🇫🇷","Senegal":"🇸🇳","Noruega":"🇳🇴","Iraque":"🇮🇶","Áustria":"🇦🇹","Jordânia":"🇯🇴","Portugal":"🇵🇹","RD Congo":"🇨🇩","Inglaterra":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croácia":"🇭🇷","Gana":"🇬🇭","Panamá":"🇵🇦","Uzbequistão":"🇺🇿","Colômbia":"🇨🇴"};
-const fl = n => FLAGS[n]||"🏳️";
+const ISO = {
+  "México":"mx","África do Sul":"za","Coreia do Sul":"kr","Rep. Tcheca":"cz",
+  "Canadá":"ca","Itália":"it","Estados Unidos":"us","Paraguai":"py",
+  "Austrália":"au","Turquia":"tr","Catar":"qa","Suíça":"ch",
+  "Brasil":"br","Marrocos":"ma","Haiti":"ht","Escócia":"gb-sct",
+  "Alemanha":"de","Curaçao":"cw","Holanda":"nl","Japão":"jp",
+  "Costa do Marfim":"ci","Equador":"ec","Tunísia":"tn","Ucrânia":"ua",
+  "Espanha":"es","Cabo Verde":"cv","Bélgica":"be","Egito":"eg",
+  "Arábia Saudita":"sa","Uruguai":"uy","Irã":"ir","Nova Zelândia":"nz",
+  "Argentina":"ar","Argélia":"dz","França":"fr","Senegal":"sn",
+  "Noruega":"no","Iraque":"iq","Áustria":"at","Jordânia":"jo",
+  "Portugal":"pt","RD Congo":"cd","Inglaterra":"gb-eng","Croácia":"hr",
+  "Gana":"gh","Panamá":"pa","Uzbequistão":"uz","Colômbia":"co"
+};
+const fl = n => ISO[n]
+  ? `<img src="https://flagcdn.com/w40/${ISO[n]}.png" style="height:22px;width:auto;border-radius:2px;vertical-align:middle" alt="${n}">`
+  : "🏳️";
 
 const BASE_MATCHES = [
   [1,"México","África do Sul","11/06","16:00","A",1],[2,"Coreia do Sul","Rep. Tcheca","11/06","23:00","A",1],
@@ -280,7 +295,8 @@ function renderGame() {
     </div>`;
   });
 
-  document.getElementById("screen-game").innerHTML = `
+  const gameEl = document.getElementById("screen-game");
+  gameEl.innerHTML = `
     <div class="screen">
       <div class="header">
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
@@ -388,7 +404,8 @@ function renderAdmin() {
       </div>
     </div>`;
   });
-  document.getElementById("screen-admin").innerHTML = `
+  const adminEl = document.getElementById("screen-admin");
+  adminEl.innerHTML = `
     <div class="screen">
       <div class="header">
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
