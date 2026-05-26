@@ -50,11 +50,10 @@ button:active{opacity:.7}
 </div>
 <div class="toast" id="toast"></div>
 
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyCj_eiMANjippVHI6P85frRuLAyAQPVwiQ",
   authDomain: "bolao-copa-5d5c4.firebaseapp.com",
@@ -65,8 +64,8 @@ const firebaseConfig = {
   appId: "1:205906994856:web:962f356bb3efa6ef56c49d"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getDatabase(firebaseApp);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 // ── Dados dos jogos ───────────────────────────────────────────────────────
 const FLAGS = {"México":"🇲🇽","África do Sul":"🇿🇦","Coreia do Sul":"🇰🇷","Rep. Tcheca":"🇨🇿","Canadá":"🇨🇦","Itália":"🇮🇹","Estados Unidos":"🇺🇸","Paraguai":"🇵🇾","Austrália":"🇦🇺","Turquia":"🇹🇷","Catar":"🇶🇦","Suíça":"🇨🇭","Brasil":"🇧🇷","Marrocos":"🇲🇦","Haiti":"🇭🇹","Escócia":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Alemanha":"🇩🇪","Curaçao":"🏝️","Holanda":"🇳🇱","Japão":"🇯🇵","Costa do Marfim":"🇨🇮","Equador":"🇪🇨","Tunísia":"🇹🇳","Ucrânia":"🇺🇦","Espanha":"🇪🇸","Cabo Verde":"🇨🇻","Bélgica":"🇧🇪","Egito":"🇪🇬","Arábia Saudita":"🇸🇦","Uruguai":"🇺🇾","Irã":"🇮🇷","Nova Zelândia":"🇳🇿","Argentina":"🇦🇷","Argélia":"🇩🇿","França":"🇫🇷","Senegal":"🇸🇳","Noruega":"🇳🇴","Iraque":"🇮🇶","Áustria":"🇦🇹","Jordânia":"🇯🇴","Portugal":"🇵🇹","RD Congo":"🇨🇩","Inglaterra":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croácia":"🇭🇷","Gana":"🇬🇭","Panamá":"🇵🇦","Uzbequistão":"🇺🇿","Colômbia":"🇨🇴"};
@@ -158,19 +157,19 @@ function playerFilled(pid) { return matches.filter(m=>guesses[pid]?.[m.id]).leng
 // ── Firebase listeners ────────────────────────────────────────────────────
 function initFirebase() {
   // Jogadores
-  onValue(ref(db,"players"), snap => {
+  db.ref("players").on("value", snap => {
     players = snap.val() ? Object.values(snap.val()) : [];
     if(document.getElementById("screen-home").classList.contains("active")) renderHome();
     if(document.getElementById("screen-ranking").classList.contains("active")) renderRanking();
   });
   // Palpites
-  onValue(ref(db,"guesses"), snap => {
+  db.ref("guesses").on("value", snap => {
     guesses = snap.val() || {};
     if(document.getElementById("screen-ranking").classList.contains("active")) renderRanking();
     if(document.getElementById("screen-home").classList.contains("active")) renderHome();
   });
   // Resultados
-  onValue(ref(db,"results"), snap => {
+  db.ref("results").on("value", snap => {
     const results = snap.val() || {};
     matches = BASE_MATCHES.map(m => ({
       ...m,
@@ -231,7 +230,7 @@ window.addPlayer = async function() {
   if(!name) return;
   if(players.find(p=>p.name.toLowerCase()===name.toLowerCase())) { showToast("Nome já existe!","err"); return; }
   const id = "p_"+Date.now();
-  await set(ref(db,`players/${id}`), {id, name});
+  await db.ref(`players/${id}`).set({id, name});
   inp.value = "";
   showToast(`${name} entrou no bolão! 🎉`);
 };
@@ -313,7 +312,7 @@ window.saveGuesses = async function() {
   if(!filled.length) { showToast("Preencha pelo menos um palpite!","err"); return; }
   const updates = {};
   filled.forEach(([id,g]) => { updates[`guesses/${currentPlayer.id}/${id}`] = {home:+g.home, away:+g.away}; });
-  await update(ref(db), updates);
+  await db.ref().update(updates);
   showToast("Palpites salvos! ✅");
   goTo("home");
 };
@@ -416,7 +415,7 @@ window.saveResults = async function() {
     const mid = +inp.dataset.mid, side = inp.dataset.side;
     if(inp.value!=="") updates[`results/${mid}/${side}`] = +inp.value;
   });
-  await update(ref(db), updates);
+  await db.ref().update(updates);
   showToast("Resultados salvos! ✅");
   goTo("home");
 };
