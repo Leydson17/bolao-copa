@@ -39,6 +39,8 @@ button:active{opacity:.7}
 @keyframes spin{to{transform:rotate(360deg)}}
 .live-dot{width:7px;height:7px;background:#00e676;border-radius:50%;display:inline-block;margin-right:5px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.score-inp:disabled{opacity:.35;cursor:not-allowed}
+.locked-badge{font-size:10px;color:#555;font-weight:700;letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -164,6 +166,11 @@ function calcPts(g, m) {
   if(gw===rw) return rw==="d"?7:5;
   return 0;
 }
+function isLocked(m) {
+  const [day, month] = m.date.split('/').map(Number);
+  const [hour, min] = m.time.split(':').map(Number);
+  return Date.now() >= Date.UTC(2026, month - 1, day, hour + 3, min);
+}
 function playerTotalPts(pid) {
   return matches.reduce((a,m)=>{ const g=guesses[pid]?.[m.id]; return g?a+calcPts(g,m):a; },0);
 }
@@ -270,6 +277,7 @@ function renderGame() {
     const g = saved[m.id];
     const hval = g!==undefined ? g.home : "";
     const aval = g!==undefined ? g.away : "";
+    const locked = isLocked(m);
     let resultHTML = "";
     if(m.realHome!==null && g!==undefined) {
       const s = calcPts(g,m);
@@ -277,17 +285,20 @@ function renderGame() {
       const labels = {10:"🎯 Placar exato! +10pts",7:"✅ Empate certo! +7pts",5:"✅ Vencedor certo +5pts",0:"❌ Errou"};
       resultHTML = `<div style="margin-top:7px;font-size:11px;color:#555;text-align:center">Placar real: <b style="color:#fff">${m.realHome} × ${m.realAway}</b> <span style="color:${colors[s]};margin-left:6px">${labels[s]}</span></div>`;
     }
-    const bl = m.realHome!==null&&g!==undefined ? `border-left:3px solid ${{10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"}[calcPts(g,m)]}` : "";
-    cards += `<div class="match-card" style="${bl}">
+    const bl = m.realHome!==null&&g!==undefined
+      ? `border-left:3px solid ${{10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"}[calcPts(g,m)]}`
+      : locked ? "border-left:3px solid #2a2a2a" : "";
+    cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#444;margin-bottom:8px">
-        <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span><span>${m.date} ${m.time}</span>
+        <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span>
+        <span>${m.date} ${m.time}${locked?` <span class="locked-badge">🔒 ENCERRADO</span>`:""}</span>
       </div>
       <div style="display:flex;align-items:center;gap:4px">
         <div style="flex:1;display:flex;align-items:center;gap:5px"><span style="font-size:20px">${m.homeFlag}</span><span style="font-size:11px;font-weight:600;color:#ccc">${m.home}</span></div>
         <div style="display:flex;align-items:center;gap:5px">
-          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="0" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="0" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${locked?" disabled":""}/>
           <span style="color:#333;font-weight:700">×</span>
-          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="0" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="0" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${locked?" disabled":""}/>
         </div>
         <div style="flex:1;display:flex;align-items:center;gap:5px;justify-content:flex-end"><span style="font-size:11px;font-weight:600;color:#ccc">${m.away}</span><span style="font-size:20px">${m.awayFlag}</span></div>
       </div>
@@ -324,8 +335,10 @@ window.saveGuesses = async function() {
     if(!toSave[mid]) toSave[mid] = {};
     toSave[mid][side] = inp.value;
   });
-  const filled = Object.entries(toSave).filter(([,g])=>g.home!==""&&g.away!=="");
-  if(!filled.length) { showToast("Preencha pelo menos um palpite!","err"); return; }
+  const filled = Object.entries(toSave).filter(([mid,g])=>
+    g.home!==""&&g.away!==""&&!isLocked(matches.find(m=>m.id===+mid))
+  );
+  if(!filled.length) { showToast("Preencha pelo menos um palpite disponível!","err"); return; }
   const updates = {};
   filled.forEach(([id,g]) => { updates[`guesses/${currentPlayer.id}/${id}`] = {home:+g.home, away:+g.away}; });
   await db.ref().update(updates);
