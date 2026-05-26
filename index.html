@@ -138,6 +138,13 @@ const BASE_MATCHES = [
   [71,"Argélia","Áustria","27/06","23:00","D",3],[72,"Jordânia","Argentina","27/06","23:00","D",3],
 ].map(([id,home,away,date,time,group,rodada])=>({id,home,away,date,time,group,rodada,homeFlag:fl(home),awayFlag:fl(away),realHome:null,realAway:null}));
 
+const ICONS = ['🦁','🐯','🦊','🐺','🐻','🐼','🦋','🦅','🦈','🐬','🐉','🦄','🦓','🐘','🦀','🐸','🐧','🦉',
+               '🔥','⚡','💎','👑','🌟','🚀','💀','🎭','🎸','🎮','😎','🤩','💪','🏆','⚽','🥊','🎯','🏄'];
+let selectedIcon = '';
+const av = p => p.icon
+  ? `<span class="avatar" style="font-size:20px;background:#0d1525">${p.icon}</span>`
+  : `<span class="avatar">${p.name[0].toUpperCase()}</span>`;
+
 // ── Estado global ─────────────────────────────────────────────────────────
 let players = [];
 let matches = JSON.parse(JSON.stringify(BASE_MATCHES));
@@ -226,7 +233,7 @@ function renderHome() {
     players.forEach(p => {
       const pts = playerTotalPts(p.id), filled = playerFilled(p.id);
       playersHTML += `<button class="player-btn" onclick="selectPlayer('${p.id}')">
-        <span class="avatar">${p.name[0].toUpperCase()}</span>
+        ${av(p)}
         <span style="flex:1;text-align:left">
           <span style="font-weight:700">${p.name}</span>
           <span style="display:block;font-size:11px;color:#555;margin-top:1px">${filled}/72 palpites</span>
@@ -246,6 +253,9 @@ function renderHome() {
       </div>
       <div class="card">
         <div class="label">ENTRAR NO BOLÃO</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+          ${ICONS.map(ic=>`<button data-icon="${ic}" onclick="pickIcon('${ic}')" style="width:34px;height:34px;font-size:18px;background:${selectedIcon===ic?'#2a2200':'#0d1525'};border:1px solid ${selectedIcon===ic?'#FFD700':'#1a2540'};border-radius:8px;cursor:pointer;transition:all .15s">${ic}</button>`).join('')}
+        </div>
         <input class="inp" id="new-name" placeholder="Seu nome..." style="margin-bottom:8px" onkeydown="if(event.key==='Enter')document.getElementById('new-pass').focus()"/>
         <div style="display:flex;gap:8px">
           <input class="inp" id="new-pass" type="password" placeholder="Crie uma senha..." onkeydown="if(event.key==='Enter')addPlayer()"/>
@@ -260,6 +270,15 @@ function renderHome() {
     </div>`;
 }
 
+window.pickIcon = function(ic) {
+  selectedIcon = selectedIcon === ic ? '' : ic;
+  document.querySelectorAll('[data-icon]').forEach(btn => {
+    const sel = btn.dataset.icon === selectedIcon;
+    btn.style.background = sel ? '#2a2200' : '#0d1525';
+    btn.style.borderColor = sel ? '#FFD700' : '#1a2540';
+  });
+};
+
 window.addPlayer = async function() {
   const inp = document.getElementById("new-name");
   const passInp = document.getElementById("new-pass");
@@ -269,8 +288,9 @@ window.addPlayer = async function() {
   if(!pass) { showToast("Crie uma senha!","err"); return; }
   if(players.find(p=>p.name.toLowerCase()===name.toLowerCase())) { showToast("Nome já existe!","err"); return; }
   const id = "p_"+Date.now();
-  await db.ref(`players/${id}`).set({id, name, pass: btoa(unescape(encodeURIComponent(pass)))});
+  await db.ref(`players/${id}`).set({id, name, pass: btoa(unescape(encodeURIComponent(pass))), icon: selectedIcon});
   myPlayerId = id; localStorage.setItem('bcp_me', id);
+  selectedIcon = '';
   inp.value = ""; passInp.value = "";
   showToast(`${name} entrou no bolão! 🎉`);
 };
@@ -392,7 +412,7 @@ function renderRanking() {
     : ranking.map((p,i)=>`
       <div class="match-card" style="display:flex;align-items:center;gap:12px;${i===0?"border:1px solid #FFD700;background:#181400":""}">
         <span style="font-size:26px;width:32px;text-align:center">${medals[i]||`${i+1}º`}</span>
-        <span class="avatar">${p.name[0].toUpperCase()}</span>
+        ${av(p)}
         <span style="flex:1;font-weight:700;font-size:15px">${p.name}</span>
         <div style="text-align:right">
           <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
@@ -422,7 +442,6 @@ function renderAdmin() {
         </div>
         <div class="card">
           <div class="label">SENHA DO ADMIN</div>
-          <p style="color:#555;font-size:12px;margin-bottom:12px">Senha padrão: <b style="color:#aaa">copa2026</b></p>
           <div style="display:flex;gap:8px">
             <input class="inp" id="admin-pass" type="password" placeholder="Senha..." onkeydown="if(event.key==='Enter')tryAdmin()"/>
             <button class="btn btn-green" onclick="tryAdmin()">›</button>
@@ -436,7 +455,7 @@ function renderAdmin() {
       <div class="label">PARTICIPANTES</div>
       ${players.map(p=>`
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span class="avatar">${p.name[0].toUpperCase()}</span>
+          ${av(p)}
           <span style="flex:1;font-weight:600">${p.name}</span>
           <span style="font-size:11px;color:#444">${playerFilled(p.id)}/72</span>
           <button onclick="deletePlayer('${p.id}','${p.name.replace(/'/g,"\\'")}')" style="background:#c62828;border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
