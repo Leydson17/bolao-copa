@@ -41,6 +41,8 @@ button:active{opacity:.7}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .score-inp:disabled{opacity:.35;cursor:not-allowed}
 .locked-badge{font-size:10px;color:#555;font-weight:700;letter-spacing:1px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9998}
+.modal-box{background:#131929;border-radius:16px;padding:24px 20px;width:90%;max-width:340px;border:1px solid #1a2540}
 </style>
 </head>
 <body>
@@ -51,6 +53,15 @@ button:active{opacity:.7}
   <div id="screen-admin"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modal-pass" style="display:none">
+  <div class="modal-box">
+    <div style="font-weight:800;font-size:18px;margin-bottom:6px">🔐 Confirmar identidade</div>
+    <div id="modal-player-name" style="color:#888;font-size:13px;margin-bottom:16px"></div>
+    <input class="inp" id="modal-pass-inp" type="password" placeholder="Sua senha..." onkeydown="if(event.key==='Enter')confirmPass()"/>
+    <button class="btn-gold" style="margin-top:12px" onclick="confirmPass()">Entrar</button>
+    <button onclick="viewOnly()" style="width:100%;margin-top:10px;background:transparent;border:none;color:#555;font-size:13px;cursor:pointer;padding:8px">Só visualizar →</button>
+  </div>
+</div>
 
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -136,6 +147,7 @@ let adminUnlocked = false;
 let gameFilter = "Todos";
 let adminFilter = "Todos";
 let myPlayerId = localStorage.getItem('bcp_me');
+let pendingPlayerId = null;
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -234,8 +246,9 @@ function renderHome() {
       </div>
       <div class="card">
         <div class="label">ENTRAR NO BOLÃO</div>
+        <input class="inp" id="new-name" placeholder="Seu nome..." style="margin-bottom:8px" onkeydown="if(event.key==='Enter')document.getElementById('new-pass').focus()"/>
         <div style="display:flex;gap:8px">
-          <input class="inp" id="new-name" placeholder="Seu nome..." onkeydown="if(event.key==='Enter')addPlayer()"/>
+          <input class="inp" id="new-pass" type="password" placeholder="Crie uma senha..." onkeydown="if(event.key==='Enter')addPlayer()"/>
           <button class="btn btn-green" onclick="addPlayer()">+</button>
         </div>
       </div>
@@ -249,21 +262,31 @@ function renderHome() {
 
 window.addPlayer = async function() {
   const inp = document.getElementById("new-name");
+  const passInp = document.getElementById("new-pass");
   const name = inp.value.trim();
+  const pass = passInp.value.trim();
   if(!name) return;
+  if(!pass) { showToast("Crie uma senha!","err"); return; }
   if(players.find(p=>p.name.toLowerCase()===name.toLowerCase())) { showToast("Nome já existe!","err"); return; }
   const id = "p_"+Date.now();
-  await db.ref(`players/${id}`).set({id, name});
-  if(!myPlayerId) { myPlayerId = id; localStorage.setItem('bcp_me', id); }
-  inp.value = "";
+  await db.ref(`players/${id}`).set({id, name, pass: btoa(unescape(encodeURIComponent(pass)))});
+  myPlayerId = id; localStorage.setItem('bcp_me', id);
+  inp.value = ""; passInp.value = "";
   showToast(`${name} entrou no bolão! 🎉`);
 };
 
 window.selectPlayer = function(id) {
-  if(!myPlayerId) { myPlayerId = id; localStorage.setItem('bcp_me', id); }
-  currentPlayer = players.find(p=>p.id===id);
-  gameFilter = "Todos";
-  goTo("game");
+  const player = players.find(p=>p.id===id);
+  if(myPlayerId === id) { currentPlayer = player; gameFilter="Todos"; goTo("game"); return; }
+  if(!player.pass) {
+    if(!myPlayerId) { myPlayerId = id; localStorage.setItem('bcp_me', id); }
+    currentPlayer = player; gameFilter="Todos"; goTo("game"); return;
+  }
+  pendingPlayerId = id;
+  document.getElementById("modal-player-name").textContent = player.name;
+  document.getElementById("modal-pass-inp").value = "";
+  document.getElementById("modal-pass").style.display = "flex";
+  setTimeout(()=>document.getElementById("modal-pass-inp").focus(), 100);
 };
 
 // ── GAME ──────────────────────────────────────────────────────────────────
@@ -482,6 +505,26 @@ window.saveResults = async function() {
   await db.ref().update(updates);
   showToast("Resultados salvos! ✅");
   goTo("home");
+};
+
+// ── Modal de senha ────────────────────────────────────────────────────────
+function closeModal() { document.getElementById("modal-pass").style.display="none"; }
+
+window.confirmPass = function() {
+  const player = players.find(p=>p.id===pendingPlayerId);
+  const entered = btoa(unescape(encodeURIComponent(document.getElementById("modal-pass-inp").value)));
+  if(entered === player.pass) {
+    myPlayerId = pendingPlayerId; localStorage.setItem('bcp_me', pendingPlayerId);
+    closeModal(); currentPlayer = player; gameFilter="Todos"; goTo("game");
+  } else {
+    showToast("Senha incorreta!","err");
+    document.getElementById("modal-pass-inp").value = "";
+  }
+};
+
+window.viewOnly = function() {
+  currentPlayer = players.find(p=>p.id===pendingPlayerId);
+  closeModal(); gameFilter="Todos"; goTo("game");
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────
