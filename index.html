@@ -5,12 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Bolão Copa 2026 🏆</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
-<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#FFD700">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Bolão 2026">
-<link rel="apple-touch-icon" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -122,6 +117,32 @@ img{max-width:100%;height:auto}
     </div>
     <input class="inp" id="champ-search" placeholder="Buscar país..." oninput="filterChampList(this.value)" style="margin-bottom:10px"/>
     <div id="champ-list" style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-changepass" style="display:none">
+  <div class="modal-box">
+    <div style="font-weight:800;font-size:18px;margin-bottom:6px">🔑 Trocar senha</div>
+    <div id="changepass-name" style="color:#8896a8;font-size:13px;margin-bottom:14px"></div>
+    <input class="inp" id="cp-current" type="password" placeholder="Senha atual..." style="margin-bottom:8px"/>
+    <input class="inp" id="cp-new" type="password" placeholder="Nova senha..." style="margin-bottom:8px"/>
+    <input class="inp" id="cp-confirm" type="password" placeholder="Confirmar nova senha..." style="margin-bottom:12px"/>
+    <button class="btn-gold" onclick="saveNewPass()">Salvar nova senha</button>
+    <button onclick="closeChangePass()" style="width:100%;margin-top:10px;background:transparent;border:none;color:#8896a8;font-size:13px;cursor:pointer;padding:8px">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-compare" style="display:none;align-items:flex-start;overflow-y:auto;padding:20px 0">
+  <div class="modal-box" style="max-width:480px;width:95%;max-height:none;padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-weight:800;font-size:18px">⚖️ Comparar jogadores</div>
+      <button onclick="closeCompare()" style="background:none;border:none;color:#8896a8;font-size:22px;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <select id="compare-p1" class="inp" style="flex:1" onchange="renderCompareModal()"><option value="">Jogador 1...</option></select>
+      <select id="compare-p2" class="inp" style="flex:1" onchange="renderCompareModal()"><option value="">Jogador 2...</option></select>
+    </div>
+    <div id="compare-body"></div>
   </div>
 </div>
 
@@ -258,6 +279,13 @@ let rawKnockoutTeams = {};
 let rawResults = {};
 let championGuesses = {};
 let realChampion = null;
+let rankingView = "players";
+let firstResultsLoad = true;
+const notifiedResults = new Set(JSON.parse(localStorage.getItem('bcp_notified')||'[]'));
+let countdownTimer = null;
+let prevRankingOrder = JSON.parse(localStorage.getItem('bcp_rank_order') || '[]');
+let compareP1 = null;
+let compareP2 = null;
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -289,11 +317,13 @@ function calcPts(g, m) {
   if(gw===rw) return rw==="d"?7:5;
   return 0;
 }
-function isLocked(m) {
+function matchTime(m) {
   const [day, month] = m.date.split('/').map(Number);
   const [hour, min] = m.time.split(':').map(Number);
-  return Date.now() >= Date.UTC(2026, month - 1, day, hour + 3, min);
+  return Date.UTC(2026, month - 1, day, hour + 3, min);
 }
+function isLocked(m) { return Date.now() >= matchTime(m); }
+function isLive(m) { const t = matchTime(m); const n = Date.now(); return n >= t && n < t + 9000000; }
 function isChampionLocked() { return Date.now() >= Date.UTC(2026, 5, 11, 19, 0); }
 function champPts(pid) { return (realChampion && championGuesses[pid] === realChampion) ? 30 : 0; }
 function playerStats(pid) {
@@ -345,7 +375,15 @@ function initFirebase() {
     rerender(["home","game","ranking"]);
   });
   db.ref("results").on("value", snap => {
-    rawResults = snap.val() || {};
+    const incoming = snap.val() || {};
+    if(!firstResultsLoad) {
+      Object.entries(incoming).forEach(([mid, res]) => {
+        if(res.home===undefined || res.away===undefined) return;
+        const old = [...matches,...knockoutMatches].find(m=>m.id===+mid);
+        if(old && old.realHome===null) maybeNotify(+mid, res);
+      });
+    } else { firstResultsLoad = false; }
+    rawResults = incoming;
     matches = BASE_MATCHES.map(m => ({
       ...m,
       realHome: rawResults[m.id]?.home ?? null,
@@ -395,6 +433,7 @@ function renderHome() {
         <div style="font-size:64px;margin-bottom:8px">🏆</div>
         <div style="font-family:'Bebas Neue',cursive;font-size:52px;line-height:1;letter-spacing:2px">BOLÃO<br><span style="color:#FFD700">COPA 2026</span></div>
         <p style="color:#8896a8;margin-top:10px;font-size:13px">${played}/72 jogos apurados</p>
+        <div id="countdown-home" style="font-size:12px;color:#FFD700;font-weight:700;margin-top:6px;min-height:18px"></div>
       </div>
       <div class="card">
         <div class="label">ENTRAR NO BOLÃO</div>
@@ -412,8 +451,30 @@ function renderHome() {
         <button class="btn btn-outline" onclick="goTo('ranking')">🏅 Ranking</button>
         <button class="btn btn-outline" onclick="openRules()">📋 Regras</button>
         <button class="btn btn-outline" onclick="goTo('admin')">⚙️ Admin</button>
+        ${('Notification' in window) ? '<button class="btn btn-outline" onclick="requestNotifPerm()" title="Ativar alertas de resultados" style="flex:0;padding:11px 12px">'+(Notification.permission==='granted'?'🔔':'🔕')+'</button>' : ''}
       </div>
     </div>`;
+  startCountdown();
+}
+
+function startCountdown() {
+  if(countdownTimer) clearInterval(countdownTimer);
+  const update = () => {
+    const el = document.getElementById('countdown-home');
+    if(!el) { clearInterval(countdownTimer); countdownTimer = null; return; }
+    const next = [...matches,...knockoutMatches]
+      .filter(m => m.home!=="?" && m.away!=="?" && !isLocked(m))
+      .sort((a,b) => matchTime(a) - matchTime(b))[0];
+    if(!next) { el.textContent = ''; return; }
+    const diff = matchTime(next) - Date.now();
+    if(diff <= 0) { el.textContent = `⚽ ${next.home} × ${next.away} — em breve!`; return; }
+    const h = Math.floor(diff/3600000);
+    const mn = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    el.textContent = `⏱️ Próximo: ${next.home} × ${next.away} em ${h>0?h+'h ':''}${mn}min ${s}s`;
+  };
+  update();
+  countdownTimer = setInterval(update, 1000);
 }
 
 window.pickIcon = function(ic) {
@@ -567,6 +628,23 @@ function renderGame() {
           ${s!==null?`<span style="color:${COLORS[s]};margin-left:6px">${LABELS[s]}</span>`:'<span style="color:#6b7a8c;margin-left:6px">— sem palpite</span>'}
         </div>`;
       }
+      let consensusHTML = "";
+      if(locked && players.length > 0) {
+        const preds = players.map(p => guesses[p.id]?.[m.id]).filter(Boolean);
+        if(preds.length > 0) {
+          const hv = preds.filter(g2 => g2.home > g2.away).length;
+          const dv = preds.filter(g2 => g2.home === g2.away).length;
+          const av2 = preds.filter(g2 => g2.home < g2.away).length;
+          const t = preds.length;
+          consensusHTML = `<div style="display:flex;gap:6px;margin-top:5px;font-size:10px;color:#6b7a8c;flex-wrap:wrap">
+            <span>📊</span>
+            <span style="color:#b2ff59">${Math.round(hv/t*100)}% casa</span>
+            <span>•</span><span style="color:#69f0ae">${Math.round(dv/t*100)}% empate</span>
+            <span>•</span><span style="color:#ff9800">${Math.round(av2/t*100)}% fora</span>
+            <span>(${t}/${players.length})</span>
+          </div>`;
+        }
+      }
       const bl = (m.realHome!==null&&g!==undefined) ? `border-left:3px solid ${COLORS[calcPts(g,m)]}`
         : (locked||m.realHome!==null) ? "border-left:3px solid #2a2a2a" : "";
       const inputDisabled = !teamsSet||locked||!isMyScreen;
@@ -578,7 +656,7 @@ function renderGame() {
       cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a8c;margin-bottom:8px">
           <span style="color:#FFD700;font-weight:700">${phaseLabel}</span>
-          <span style="flex-shrink:0;margin-left:4px">${m.date} ${m.time}${locked?` <span class="locked-badge">🔒</span>`:""}</span>
+          <span style="flex-shrink:0;margin-left:4px">${m.date} ${m.time}${isLive(m)?' <span style="color:#ff4444;font-weight:700;animation:pulse 1.5s infinite">🔴 AO VIVO</span>':locked?' <span class="locked-badge">🔒</span>':''}</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${homeD}</span></div>
@@ -590,6 +668,7 @@ function renderGame() {
           <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${awayD}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
         </div>
         ${resultHTML}
+        ${consensusHTML}
       </div>`;
     });
   }
@@ -603,6 +682,7 @@ function renderGame() {
           <div style="font-weight:800;font-size:18px">${isMyScreen?'':' 👁️ '}${currentPlayer.name}</div>
           <div style="color:${isMyScreen?'#FFD700':'#555'};font-size:12px;font-weight:600">${isMyScreen?pts+' pts acumulados':'somente visualização'}</div>
         </div>
+        ${isMyScreen?'<button onclick="openChangePass()" style="background:none;border:1px solid #1a2540;border-radius:8px;color:#a8b8c8;padding:6px 10px;font-size:16px;flex-shrink:0" title="Trocar senha">🔑</button>':''}
       </div>
       ${champHTML}
       ${statsHTML}
@@ -700,39 +780,95 @@ window.saveChampion = window.pickChamp;
 
 // ── RANKING ───────────────────────────────────────────────────────────────
 function renderRanking() {
-  const played = matches.filter(m=>m.realHome!==null).length;
+  const playedTotal = matches.filter(m=>m.realHome!==null).length + knockoutMatches.filter(m=>m.realHome!==null).length;
   const medals = ["🥇","🥈","🥉"];
   const ranking = players.map(p=>({...p,pts:playerTotalPts(p.id)})).sort((a,b)=>b.pts-a.pts);
   const guessableTotal = matches.length + knockoutMatches.filter(m=>m.home!=="?"&&m.away!=="?").length;
-  let rows = ranking.length===0
-    ? `<div style="text-align:center;color:#333;padding:60px">Nenhum participante ainda</div>`
-    : ranking.map((p,i)=>{
-      const champ = championGuesses[p.id];
-      const cp = champPts(p.id);
-      return `<div class="match-card" style="display:flex;align-items:center;gap:12px;${i===0?"border:1px solid #FFD700;background:#181400":""}">
-        <span style="font-size:26px;width:32px;text-align:center">${medals[i]||`${i+1}º`}</span>
-        ${av(p)}
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:15px">${p.name}</div>
-          ${champ?`<div style="font-size:10px;color:#8896a8;margin-top:2px">🏆 ${champ}${cp?` <span style="color:#00e676">+30pts</span>`:''}</div>`:''}
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
-          <div style="font-size:10px;color:#6b7a8c">${playerFilled(p.id)}/${guessableTotal} palpites</div>
-        </div>
-      </div>`;
-    }).join("");
+  const COLORS = {10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"};
+  const LABELS = {10:"🎯 +10",7:"✅ +7",5:"✅ +5",0:"❌ 0"};
+
+  let content = "";
+  if(rankingView === "players") {
+    const newOrder = ranking.map(p => p.id);
+    content = ranking.length===0
+      ? `<div style="text-align:center;color:#6b7a8c;padding:60px">Nenhum participante ainda</div>`
+      : ranking.map((p,i)=>{
+          const champ = championGuesses[p.id];
+          const cp = champPts(p.id);
+          const prevIdx = prevRankingOrder.indexOf(p.id);
+          const arrow = prevRankingOrder.length > 0 && prevIdx !== -1
+            ? (prevIdx > i ? `<span style="color:#00e676;font-size:10px;font-weight:700">▲${prevIdx-i}</span>`
+              : prevIdx < i ? `<span style="color:#ff5252;font-size:10px;font-weight:700">▼${i-prevIdx}</span>`
+              : `<span style="color:#4a5a6e;font-size:10px">—</span>`)
+            : '';
+          return `<div class="match-card" style="display:flex;align-items:center;gap:12px;${i===0?"border:1px solid #FFD700;background:#181400":""}">
+            <div style="text-align:center;width:32px;flex-shrink:0">
+              <div style="font-size:24px;line-height:1">${medals[i]||`${i+1}º`}</div>
+              <div style="min-height:14px">${arrow}</div>
+            </div>
+            ${av(p)}
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:15px">${p.name}</div>
+              ${champ?`<div style="font-size:10px;color:#8896a8;margin-top:2px">🏆 ${champ}${cp?` <span style="color:#00e676">+30</span>`:''}</div>`:''}
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
+              <div style="font-size:10px;color:#6b7a8c">${playerFilled(p.id)}/${guessableTotal}</div>
+            </div>
+          </div>`;
+        }).join("");
+    localStorage.setItem('bcp_rank_order', JSON.stringify(newOrder));
+    prevRankingOrder = newOrder;
+  } else {
+    const done = [...matches,...knockoutMatches].filter(m=>m.realHome!==null);
+    if(done.length===0) {
+      content = `<div style="text-align:center;color:#6b7a8c;padding:60px;font-size:13px">Nenhum resultado inserido ainda</div>`;
+    } else {
+      content = done.map(m => {
+        const ph = m.phase ? KNOCKOUT_PHASES.find(p=>p.code===m.phase)?.label : `Grupo ${m.group}`;
+        const rows = players.map(p=>{
+          const g = guesses[p.id]?.[m.id];
+          const pts = g!==undefined ? calcPts(g,m) : null;
+          return {p,g,pts};
+        }).sort((a,b)=>(b.pts??-1)-(a.pts??-1));
+        return `<div class="match-card">
+          <div style="font-size:10px;color:#6b7a8c;margin-bottom:6px;font-weight:700;letter-spacing:1px">${ph} • ${m.date}</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:4px;flex:1;justify-content:flex-end"><span class="team-name" style="text-align:right">${m.home}</span>${m.homeFlag}</div>
+            <div style="background:#0d1525;border-radius:8px;padding:4px 10px;font-size:18px;font-weight:900;color:#FFD700;flex-shrink:0">${m.realHome} × ${m.realAway}</div>
+            <div style="display:flex;align-items:center;gap:4px;flex:1">${m.awayFlag}<span class="team-name">${m.away}</span></div>
+          </div>
+          ${rows.map(({p,g,pts})=>`
+            <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #0d1525">
+              ${av(p)}
+              <span style="flex:1;font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>
+              ${g!==undefined
+                ? `<span style="color:#8896a8;font-size:12px;flex-shrink:0">${g.home}×${g.away}</span>
+                   <span style="color:${COLORS[pts]};font-size:12px;font-weight:700;min-width:44px;text-align:right;flex-shrink:0">${LABELS[pts]}</span>`
+                : `<span style="color:#6b7a8c;font-size:11px">sem palpite</span>`}
+            </div>`).join('')}
+        </div>`;
+      }).join('');
+    }
+  }
 
   document.getElementById("screen-ranking").innerHTML = `
     <div class="screen">
       <div class="header">
         <button class="back-btn" onclick="goTo('home')">‹ Voltar</button>
         <div style="font-weight:800;font-size:18px">🏅 Ranking</div>
+        <button onclick="openCompare()" style="background:none;border:1px solid #1a2540;border-radius:8px;color:#a8b8c8;padding:6px 10px;font-size:18px;flex-shrink:0" title="Comparar jogadores">⚖️</button>
+        <button onclick="shareRanking()" style="background:none;border:1px solid #1a2540;border-radius:8px;color:#a8b8c8;padding:6px 10px;font-size:18px;flex-shrink:0" title="Compartilhar">↗</button>
       </div>
-      <p style="color:#6b7a8c;text-align:center;font-size:12px;margin-bottom:16px"><span class="live-dot"></span>${played + knockoutMatches.filter(m=>m.realHome!==null).length}/${matches.length+knockoutMatches.length} jogos apurados • atualização em tempo real</p>
-      ${rows}
+      <p style="color:#6b7a8c;text-align:center;font-size:12px;margin-bottom:12px"><span class="live-dot"></span>${playedTotal}/${matches.length+knockoutMatches.length} jogos apurados</p>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="group-btn${rankingView==='players'?' active':''}" onclick="setRankingView('players')" style="flex:1">👥 Por jogador</button>
+        <button class="group-btn${rankingView==='matches'?' active':''}" onclick="setRankingView('matches')" style="flex:1">📊 Por jogo</button>
+      </div>
+      ${content}
     </div>`;
 }
+window.setRankingView = function(v) { rankingView=v; renderRanking(); };
 
 // ── ADMIN ─────────────────────────────────────────────────────────────────
 function renderAdmin() {
@@ -986,10 +1122,136 @@ window.viewOnly = function() {
   closeModal(); gameFilter="Todos"; goTo("game");
 };
 
-// ── Init ──────────────────────────────────────────────────────────────────
-if('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+// ── Trocar senha ─────────────────────────────────────────────────────────
+window.openChangePass = function() {
+  if(!currentPlayer) return;
+  document.getElementById('changepass-name').textContent = currentPlayer.name;
+  document.getElementById('cp-current').value = '';
+  document.getElementById('cp-new').value = '';
+  document.getElementById('cp-confirm').value = '';
+  document.getElementById('modal-changepass').style.display = 'flex';
+  setTimeout(() => document.getElementById('cp-current').focus(), 100);
+};
+window.closeChangePass = function() {
+  document.getElementById('modal-changepass').style.display = 'none';
+};
+window.saveNewPass = async function() {
+  if(!currentPlayer) return;
+  const cur = document.getElementById('cp-current').value;
+  const nw = document.getElementById('cp-new').value;
+  const cf = document.getElementById('cp-confirm').value;
+  if(!cur || !nw || !cf) { showToast('Preencha todos os campos','err'); return; }
+  if(nw.length < 3) { showToast('Nova senha muito curta (mín. 3 caracteres)','err'); return; }
+  if(nw !== cf) { showToast('Senhas não coincidem','err'); return; }
+  const player = players.find(p => p.id === currentPlayer.id);
+  if(!player) return;
+  if(btoa(unescape(encodeURIComponent(cur))) !== player.pass) { showToast('Senha atual incorreta','err'); return; }
+  await db.ref(`players/${currentPlayer.id}/pass`).set(btoa(unescape(encodeURIComponent(nw))));
+  closeChangePass();
+  showToast('Senha alterada com sucesso! ✅');
+};
+
+// ── Comparação entre jogadores ────────────────────────────────────────────
+window.openCompare = function() {
+  const opts = players.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('compare-p1').innerHTML = '<option value="">Jogador 1...</option>' + opts;
+  document.getElementById('compare-p2').innerHTML = '<option value="">Jogador 2...</option>' + opts;
+  if(myPlayerId) document.getElementById('compare-p1').value = myPlayerId;
+  document.getElementById('compare-body').innerHTML = '<p style="text-align:center;color:#6b7a8c;padding:20px">Selecione dois jogadores</p>';
+  document.getElementById('modal-compare').style.display = 'flex';
+  if(myPlayerId) renderCompareModal();
+};
+window.closeCompare = function() {
+  document.getElementById('modal-compare').style.display = 'none';
+};
+window.renderCompareModal = function() {
+  const p1id = document.getElementById('compare-p1').value;
+  const p2id = document.getElementById('compare-p2').value;
+  const body = document.getElementById('compare-body');
+  if(!p1id || !p2id || p1id === p2id) {
+    body.innerHTML = '<p style="text-align:center;color:#6b7a8c;padding:20px">Selecione dois jogadores diferentes</p>';
+    return;
+  }
+  const p1 = players.find(p => p.id === p1id);
+  const p2 = players.find(p => p.id === p2id);
+  const COLORS = {10:"#00e676",7:"#69f0ae",5:"#b2ff59",0:"#ff5252"};
+  const done = [...matches,...knockoutMatches].filter(m => m.realHome !== null);
+  const p1pts = playerTotalPts(p1id), p2pts = playerTotalPts(p2id);
+  const p1wins = done.filter(m => { const g1=guesses[p1id]?.[m.id], g2=guesses[p2id]?.[m.id]; return g1&&g2&&calcPts(g1,m)>calcPts(g2,m); }).length;
+  const p2wins = done.filter(m => { const g1=guesses[p1id]?.[m.id], g2=guesses[p2id]?.[m.id]; return g1&&g2&&calcPts(g2,m)>calcPts(g1,m); }).length;
+  let html = `<div style="display:flex;gap:8px;margin-bottom:12px">
+    <div style="flex:1;text-align:center;background:#0d1525;border-radius:10px;padding:10px;border:1px solid ${p1pts>=p2pts?'#FFD700':'#1a2540'}">
+      ${av(p1)}<div style="font-weight:700;margin-top:4px;font-size:13px">${p1.name}</div>
+      <div style="font-size:22px;font-weight:900;color:#FFD700">${p1pts}<span style="font-size:10px;color:#6b7a8c"> pts</span></div>
+      <div style="font-size:10px;color:#00e676;margin-top:2px">Venceu ${p1wins}× nos duelos</div>
+    </div>
+    <div style="flex:1;text-align:center;background:#0d1525;border-radius:10px;padding:10px;border:1px solid ${p2pts>p1pts?'#FFD700':'#1a2540'}">
+      ${av(p2)}<div style="font-weight:700;margin-top:4px;font-size:13px">${p2.name}</div>
+      <div style="font-size:22px;font-weight:900;color:#FFD700">${p2pts}<span style="font-size:10px;color:#6b7a8c"> pts</span></div>
+      <div style="font-size:10px;color:#00e676;margin-top:2px">Venceu ${p2wins}× nos duelos</div>
+    </div>
+  </div>`;
+  if(!done.length) { body.innerHTML = html + '<p style="text-align:center;color:#6b7a8c;padding:12px;font-size:13px">Nenhum jogo apurado ainda</p>'; return; }
+  done.forEach(m => {
+    const g1 = guesses[p1id]?.[m.id], g2 = guesses[p2id]?.[m.id];
+    const pts1 = g1!==undefined ? calcPts(g1,m) : null;
+    const pts2 = g2!==undefined ? calcPts(g2,m) : null;
+    const ph = m.phase ? KNOCKOUT_PHASES.find(p=>p.code===m.phase)?.label : `Grupo ${m.group}`;
+    html += `<div style="background:#0d1525;border-radius:10px;padding:10px;margin-bottom:8px">
+      <div style="font-size:10px;color:#6b7a8c;margin-bottom:6px">${ph} • ${m.date} • <b style="color:#fff">${m.home} ${m.realHome}×${m.realAway} ${m.away}</b></div>
+      <div style="display:flex;gap:6px">
+        <div style="flex:1;text-align:center;padding:8px 4px;border-radius:8px;background:#131929;${pts1!==null?'border-left:3px solid '+COLORS[pts1]:'opacity:.5'}">
+          ${g1!==undefined?`<div style="font-weight:700;font-size:16px">${g1.home}×${g1.away}</div><div style="font-size:11px;color:${COLORS[pts1??0]}">${pts1!==null?'+'+pts1+'pts':'—'}</div>`:'<div style="color:#6b7a8c;font-size:11px;padding:4px">sem<br>palpite</div>'}
+        </div>
+        <div style="flex:1;text-align:center;padding:8px 4px;border-radius:8px;background:#131929;${pts2!==null?'border-left:3px solid '+COLORS[pts2]:'opacity:.5'}">
+          ${g2!==undefined?`<div style="font-weight:700;font-size:16px">${g2.home}×${g2.away}</div><div style="font-size:11px;color:${COLORS[pts2??0]}">${pts2!==null?'+'+pts2+'pts':'—'}</div>`:'<div style="color:#6b7a8c;font-size:11px;padding:4px">sem<br>palpite</div>'}
+        </div>
+      </div>
+    </div>`;
+  });
+  body.innerHTML = html;
+};
+
+// ── Notificações ─────────────────────────────────────────────────────────
+function maybeNotify(mid, res) {
+  if(notifiedResults.has(mid)) return;
+  notifiedResults.add(mid);
+  localStorage.setItem('bcp_notified', JSON.stringify([...notifiedResults]));
+  if(Notification.permission !== 'granted') return;
+  const m = [...matches,...knockoutMatches].find(m=>m.id===mid);
+  if(!m) return;
+  const label = m.phase
+    ? (KNOCKOUT_PHASES.find(p=>p.code===m.phase)?.label || m.phase)
+    : `Grupo ${m.group}`;
+  const title = `⚽ ${m.home} ${res.home} × ${res.away} ${m.away}`;
+  new Notification(title, {body:`${label} • ${m.date} ${m.time} — resultado inserido!`, icon:'icon.svg'});
 }
+
+window.requestNotifPerm = async function() {
+  if(!('Notification' in window)) { showToast('Notificações não suportadas','err'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm === 'granted') showToast('Notificações ativadas! 🔔');
+  else if(perm === 'denied') showToast('Notificações bloqueadas no navegador','err');
+  renderHome();
+};
+
+// ── Compartilhar ranking ──────────────────────────────────────────────────
+window.shareRanking = async function() {
+  const ranking = players.map(p=>({...p,pts:playerTotalPts(p.id)})).sort((a,b)=>b.pts-a.pts);
+  const medals = ["🥇","🥈","🥉"];
+  const playedTotal = matches.filter(m=>m.realHome!==null).length + knockoutMatches.filter(m=>m.realHome!==null).length;
+  let text = `🏆 Bolão Copa 2026 — Ranking\n📊 ${playedTotal} jogos apurados\n\n`;
+  ranking.forEach((p,i) => { text += `${medals[i]||`${i+1}º`} ${p.name} — ${p.pts} pts\n`; });
+  text += `\nhttps://leydson17.github.io/bolao-copa`;
+  if(navigator.share) {
+    try { await navigator.share({title:'Bolão Copa 2026', text}); } catch(e) {}
+  } else {
+    try { await navigator.clipboard.writeText(text); showToast('Ranking copiado! 📋'); }
+    catch(e) { showToast('Não foi possível copiar','err'); }
+  }
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────
 initFirebase();
 renderHome();
 </script>
