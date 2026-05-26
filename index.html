@@ -53,6 +53,47 @@ button:active{opacity:.7}
   <div id="screen-admin"></div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modal-rules" style="display:none">
+  <div class="modal-box" style="max-height:85vh;overflow-y:auto;max-width:400px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px">📋 Regras do Bolão</div>
+      <button onclick="closeRules()" style="background:none;border:none;color:#555;font-size:22px;cursor:pointer">✕</button>
+    </div>
+    <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
+      <div class="label" style="margin-bottom:10px">PONTUAÇÃO</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a2540">
+        <span style="font-size:13px;color:#ccc">🎯 Placar exato</span>
+        <span style="font-weight:900;color:#FFD700;font-size:20px">10<span style="font-size:11px;font-weight:400;color:#555"> pts</span></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a2540">
+        <span style="font-size:13px;color:#ccc">✅ Empate certo</span>
+        <span style="font-weight:900;color:#69f0ae;font-size:20px">7<span style="font-size:11px;font-weight:400;color:#555"> pts</span></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a2540">
+        <span style="font-size:13px;color:#ccc">✅ Acertou o vencedor</span>
+        <span style="font-weight:900;color:#b2ff59;font-size:20px">5<span style="font-size:11px;font-weight:400;color:#555"> pts</span></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0">
+        <span style="font-size:13px;color:#ccc">❌ Errou</span>
+        <span style="font-weight:900;color:#ff5252;font-size:20px">0<span style="font-size:11px;font-weight:400;color:#555"> pts</span></span>
+      </div>
+    </div>
+    <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
+      <div class="label" style="margin-bottom:8px">PRAZO DOS PALPITES</div>
+      <p style="font-size:13px;color:#888;line-height:1.6">🔒 Os palpites são bloqueados automaticamente no horário exato do apito inicial. Após o bloqueio não é possível alterar ou inserir novos palpites.</p>
+    </div>
+    <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:10px">
+      <div class="label" style="margin-bottom:8px">PRIVACIDADE</div>
+      <p style="font-size:13px;color:#888;line-height:1.6">👁️ Os palpites dos outros participantes ficam ocultos até o início do jogo. Após o bloqueio, todos podem ver os palpites de todos.</p>
+    </div>
+    <div style="background:#0d1525;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div class="label" style="margin-bottom:8px">ACESSO</div>
+      <p style="font-size:13px;color:#888;line-height:1.6">🔐 Cada participante cria uma senha no cadastro. A senha é necessária para inserir palpites. Sem ela, só é possível visualizar.</p>
+    </div>
+    <button onclick="closeRules()" class="btn-gold">Entendido! 👍</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-pass" style="display:none">
   <div class="modal-box">
     <div style="font-weight:800;font-size:18px;margin-bottom:6px">🔐 Confirmar identidade</div>
@@ -266,6 +307,7 @@ function renderHome() {
       ${playersHTML}
       <div style="display:flex;gap:10px;margin-top:4px">
         <button class="btn btn-outline" onclick="goTo('ranking')">🏅 Ranking</button>
+        <button class="btn btn-outline" onclick="openRules()">📋 Regras</button>
         <button class="btn btn-outline" onclick="goTo('admin')">⚙️ Admin</button>
       </div>
     </div>`;
@@ -564,6 +606,10 @@ window.saveResults = async function() {
   showToast("Resultados salvos! ✅");
   goTo("home");
 };
+
+// ── Modal de regras ───────────────────────────────────────────────────────
+window.openRules = function() { document.getElementById("modal-rules").style.display="flex"; };
+window.closeRules = function() { document.getElementById("modal-rules").style.display="none"; };
 
 // ── Modal de senha ────────────────────────────────────────────────────────
 function closeModal() { document.getElementById("modal-pass").style.display="none"; }
