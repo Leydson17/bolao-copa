@@ -53,5 +53,21 @@ img{max-width:100%;height:auto}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .score-inp:disabled{opacity:.35;cursor:not-allowed}
 .locked-badge{font-size:10px;color:#7a8aa8;font-weight:700;letter-spacing:1px}
+.status-badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;border:1px solid transparent}
+.status-wait{background:#111a2d;color:#8896a8;border-color:#1a2540}
+.status-live{background:#2a0808;color:#ff6b6b;border-color:#6b1b1b;animation:pulse 1.5s infinite}
+.status-ended{background:#251f0a;color:#FFD700;border-color:#5a4800}
+.status-done{background:#082015;color:#00e676;border-color:#0a5c36}
+.status-locked{background:#111827;color:#7a8aa8;border-color:#273246}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9998}
 .modal-box{background:#131929;border-radius:16px;padding:24px 20px;width:90%;max-width:340px;border:1px solid #1a2540}
+@media (max-width:420px){
+  .screen{padding:16px 10px 72px}
+  .card{padding:14px 12px;border-radius:12px}
+  .match-card{padding:10px}
+  .team-name{font-size:10px;white-space:normal;line-height:1.2}
+  .score-inp{width:34px;height:34px;font-size:15px}
+  .group-btn{padding:5px 11px}
+  .header{gap:8px}
+  .back-btn{padding:6px 9px}
+}

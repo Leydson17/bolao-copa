@@ -10,7 +10,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const auth = firebase.auth();
+const ADMIN_PASSWORD = 'leyd1703@';
 
 // ── Dados dos jogos ───────────────────────────────────────────────────────
 const ISO = {
@@ -63,12 +63,6 @@ async function migrateLegacyPassword(player, password) {
   const fields = await makePasswordFields(password);
   await db.ref(`players/${player.id}`).update({...fields, pass:null});
   Object.assign(player, fields, {pass:null});
-}
-async function ensurePlayerOwner(player) {
-  if(player.ownerUid) return;
-  const user = await ensureAnonymousAuth();
-  await db.ref(`players/${player.id}/ownerUid`).set(user.uid);
-  player.ownerUid = user.uid;
 }
 
 const BASE_MATCHES = [
@@ -149,10 +143,10 @@ let knockoutMatches = JSON.parse(JSON.stringify(BASE_KNOCKOUT));
 let guesses = {};
 let currentPlayer = null;
 let adminUnlocked = false;
-let adminUser = null;
-let authUser = null;
 let gameFilter = "Todos";
 let adminFilter = "Todos";
+let adminTab = "participantes";
+let homePlayerSearch = "";
 let myPlayerId = localStorage.getItem('bcp_me');
 let pendingPlayerId = null;
 let editingPlayerId = null;
@@ -170,6 +164,7 @@ let autoResultsRunning = false;
 let prevRankingOrder = JSON.parse(localStorage.getItem('bcp_rank_order') || '[]');
 let compareP1 = null;
 let compareP2 = null;
+const savedGuessFeedback = {};
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -209,6 +204,13 @@ function matchTime(m) {
 function isLocked(m) { return Date.now() >= matchTime(m); }
 function isLive(m) { const t = matchTime(m); const n = Date.now(); return n >= t && n < t + 9000000; }
 function isFinished(m) { return Date.now() >= matchTime(m) + 9000000; }
+function matchStatusBadge(m) {
+  if(m.realHome !== null && m.realAway !== null) return '<span class="status-badge status-done">Resultado inserido</span>';
+  if(isLive(m)) return '<span class="status-badge status-live">Ao vivo</span>';
+  if(isFinished(m)) return '<span class="status-badge status-ended">Finalizado</span>';
+  if(isLocked(m)) return '<span class="status-badge status-locked">Bloqueado</span>';
+  return '<span class="status-badge status-wait">Aguardando</span>';
+}
 function isChampionLocked() { return Date.now() >= Date.UTC(2026, 5, 11, 19, 0); }
 function champPts(pid) { return (realChampion && championGuesses[pid] === realChampion) ? 30 : 0; }
 function playerStats(pid) {
@@ -381,13 +383,6 @@ function rerender(screens) {
   });
 }
 function initFirebase() {
-  auth.onAuthStateChanged(user => {
-    authUser = user;
-    adminUser = user && !user.isAnonymous ? user : null;
-    adminUnlocked = !!adminUser;
-    rerender(["admin"]);
-    if(!user) ensureAnonymousAuth().catch(() => {});
-  });
   db.ref("players").on("value", snap => {
     players = snap.val() ? Object.values(snap.val()) : [];
     rerender(["home","ranking"]);
@@ -435,8 +430,10 @@ function renderHome() {
   const played = matches.filter(m=>m.realHome!==null).length;
   let playersHTML = "";
   if(players.length > 0) {
-    playersHTML = `<div class="card"><div class="label"><span class="live-dot"></span>PARTICIPANTES AO VIVO</div>`;
-    players.forEach(p => {
+    const filteredPlayers = players.filter(p => !homePlayerSearch || normalizeName(p.name).includes(normalizeName(homePlayerSearch)));
+    playersHTML = `<div class="card"><div class="label"><span class="live-dot"></span>PARTICIPANTES AO VIVO</div>
+      <input class="inp" value="${escapeHtml(homePlayerSearch)}" placeholder="Buscar participante..." oninput="setHomePlayerSearch(this.value)" style="margin-bottom:10px"/>`;
+    filteredPlayers.forEach(p => {
       const pts = playerTotalPts(p.id), filled = playerFilled(p.id);
       playersHTML += `<button class="player-btn" onclick="selectPlayer(${escapeJsArg(p.id)})">
         ${av(p)}
@@ -448,6 +445,7 @@ function renderHome() {
         <span style="color:#333;font-size:20px;margin-left:8px">›</span>
       </button>`;
     });
+    if(filteredPlayers.length === 0) playersHTML += '<p style="color:#6b7a8c;font-size:12px;text-align:center;padding:12px">Nenhum participante encontrado</p>';
     playersHTML += `</div>`;
   }
   document.getElementById("screen-home").innerHTML = `
@@ -508,6 +506,17 @@ window.pickIcon = function(ic) {
     btn.style.borderColor = sel ? '#FFD700' : '#1a2540';
   });
 };
+window.setHomePlayerSearch = function(value) {
+  homePlayerSearch = value;
+  renderHome();
+  setTimeout(() => {
+    const input = document.querySelector('#screen-home input[placeholder="Buscar participante..."]');
+    if(input) {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+  }, 0);
+};
 
 window.addPlayer = async function() {
   const inp = document.getElementById("new-name");
@@ -518,9 +527,8 @@ window.addPlayer = async function() {
   if(!pass) { showToast("Crie uma senha!","err"); return; }
   if(players.find(p=>p.name.toLowerCase()===name.toLowerCase())) { showToast("Nome já existe!","err"); return; }
   const id = "p_"+Date.now();
-  const user = await ensureAnonymousAuth();
   const passFields = await makePasswordFields(pass);
-  await db.ref(`players/${id}`).set({id, name, ownerUid:user.uid, ...passFields, icon: selectedIcon});
+  await db.ref(`players/${id}`).set({id, name, ...passFields, icon: selectedIcon});
   myPlayerId = id; localStorage.setItem('bcp_me', id);
   selectedIcon = '';
   inp.value = ""; passInp.value = "";
@@ -681,7 +689,11 @@ function renderGame() {
       cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a8c;margin-bottom:8px">
           <span style="color:#FFD700;font-weight:700">${phaseLabel}</span>
-          <span style="flex-shrink:0;margin-left:4px">${m.date} ${m.time}${isLive(m)?' <span style="color:#ff4444;font-weight:700;animation:pulse 1.5s infinite">🔴 AO VIVO</span>':locked?' <span class="locked-badge">🔒</span>':''}</span>
+          <span style="flex-shrink:0;margin-left:4px">${m.date} ${m.time}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+          ${matchStatusBadge(m)}
+          <span style="font-size:10px;color:#00e676;min-width:42px;text-align:right">${savedGuessFeedback[m.id] || ''}</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${homeD}</span></div>
@@ -734,12 +746,22 @@ window.autoSaveGuess = async function(mid) {
   if(!m || isLocked(m) || m.home==="?" || m.away==="?") return;
   const prev = guesses[currentPlayer.id]?.[mid];
   if(prev && prev.home===+hi.value && prev.away===+ai.value) return;
-  await db.ref(`guesses/${currentPlayer.id}/${mid}`).set({home:+hi.value, away:+ai.value});
+  try {
+    await db.ref(`guesses/${currentPlayer.id}/${mid}`).set({home:+hi.value, away:+ai.value});
+  } catch (err) {
+    showToast("Nao foi possivel salvar o palpite","err");
+    return;
+  }
+  savedGuessFeedback[mid] = "salvo";
   const card = hi.closest('.match-card');
   if(card) {
     card.style.outline = '2px solid #00e676';
     setTimeout(()=>{ card.style.outline=''; }, 1200);
   }
+  setTimeout(() => {
+    delete savedGuessFeedback[mid];
+    if(document.getElementById("screen-game").classList.contains("active")) renderGame();
+  }, 1200);
 };
 
 window.setGameFilter = function(g) {
@@ -766,7 +788,12 @@ window.saveGuesses = async function() {
   if(!filled.length) { showToast("Preencha pelo menos um palpite disponível!","err"); return; }
   const updates = {};
   filled.forEach(([id,g]) => { updates[`guesses/${currentPlayer.id}/${id}`] = {home:+g.home, away:+g.away}; });
-  await db.ref().update(updates);
+  try {
+    await db.ref().update(updates);
+  } catch (err) {
+    showToast("Nao foi possivel salvar os palpites","err");
+    return;
+  }
   showToast("Palpites salvos! ✅");
   goTo("home");
 };
@@ -810,7 +837,8 @@ window.pickChamp = async function(team) {
   showToast(`Palpite do campeão: ${team} 🏆`);
 };
 window.pickAdminChamp = async function(team) {
-  await db.ref("champion").set(team);
+  try { await db.ref("champion").set(team); }
+  catch (err) { showToast("Nao foi possivel registrar o campeao","err"); return; }
   closeChampPicker();
   showToast("Campeão registrado! 🏆");
 };
@@ -833,6 +861,7 @@ function renderRanking() {
       : ranking.map((p,i)=>{
           const champ = championGuesses[p.id];
           const cp = champPts(p.id);
+          const tied = ranking.some((other, idx) => idx !== i && other.pts === p.pts);
           const prevIdx = prevRankingOrder.indexOf(p.id);
           const arrow = prevRankingOrder.length > 0 && prevIdx !== -1
             ? (prevIdx > i ? `<span style="color:#00e676;font-size:10px;font-weight:700">▲${prevIdx-i}</span>`
@@ -848,6 +877,7 @@ function renderRanking() {
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:15px">${escapeHtml(p.name)}</div>
               ${champ?`<div style="font-size:10px;color:#8896a8;margin-top:2px">🏆 ${escapeHtml(champ)}${cp?` <span style="color:#00e676">+30</span>`:''}</div>`:''}
+              ${tied?'<div style="font-size:10px;color:#6b7a8c;margin-top:2px">mesma pontuacao</div>':''}
             </div>
             <div style="text-align:right;flex-shrink:0">
               <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
@@ -918,13 +948,11 @@ function renderAdmin() {
           <div style="font-weight:800;font-size:18px">⚙️ Admin</div>
         </div>
         <div class="card">
-          <div class="label">LOGIN DO ADMIN</div>
-          <input class="inp" id="admin-email" type="email" placeholder="Email do admin..." style="margin-bottom:8px" onkeydown="if(event.key==='Enter')document.getElementById('admin-pass').focus()"/>
+          <div class="label">SENHA DO ADMIN</div>
           <div style="display:flex;gap:8px">
             <input class="inp" id="admin-pass" type="password" placeholder="Senha..." onkeydown="if(event.key==='Enter')tryAdmin()"/>
             <button class="btn btn-green" onclick="tryAdmin()">›</button>
           </div>
-          <p style="font-size:11px;color:#6b7a8c;line-height:1.5;margin-top:10px">Use um usuario criado no Firebase Authentication.</p>
         </div>
       </div>`;
     return;
@@ -978,6 +1006,7 @@ function renderAdmin() {
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a8c;margin-bottom:8px">
         <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span><span>${m.date} ${m.time}</span>
       </div>
+      <div style="margin-bottom:8px">${matchStatusBadge(m)}</div>
       <div style="display:flex;align-items:center;gap:4px">
         <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${escapeHtml(m.home)}</span></div>
         <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
@@ -1020,6 +1049,7 @@ function renderAdmin() {
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a8c;margin-bottom:8px">
         <span style="color:#FFD700;font-weight:700">${ph?.label||m.phase} • ${m.date}</span>
       </div>
+      <div style="margin-bottom:8px">${matchStatusBadge(m)}</div>
       <div style="display:flex;align-items:center;gap:4px">
         <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${escapeHtml(m.home)}</span></div>
         <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
@@ -1046,6 +1076,26 @@ function renderAdmin() {
       <button onclick="runAutoResultSync(true)" class="btn btn-outline" style="flex:0 0 auto;padding:9px 12px">Buscar agora</button>
     </div>
   </div>`;
+  const adminTabs = `
+    <div class="groups-scroll" style="margin-bottom:12px">
+      ${[
+        ['participantes','Participantes'],
+        ['resultados','Resultados'],
+        ['eliminatoria','Eliminatoria'],
+        ['config','Config']
+      ].map(([code,label]) => `<button class="group-btn${adminTab===code?' active':''}" onclick="setAdminTab('${code}')">${label}</button>`).join('')}
+    </div>`;
+  const adminContent = adminTab === 'participantes'
+    ? `${playersMgmt || '<div class="card"><p style="color:#6b7a8c;font-size:12px;text-align:center">Nenhum participante ainda</p></div>'}`
+    : adminTab === 'resultados'
+      ? `${autoResultsCard}
+        <div class="label" style="margin-bottom:10px">RESULTADOS — GRUPOS</div>
+        <div class="groups-scroll">${groupBtns}</div>
+        ${groupCards}
+        <button class="btn-gold" onclick="saveGroupResults()">💾 Salvar Resultados Grupos</button>`
+      : adminTab === 'eliminatoria'
+        ? `${teamsCard}${koResultsCard}`
+        : `${champCard}${autoResultsCard}`;
 
   document.getElementById("screen-admin").innerHTML = `
     <div class="screen">
@@ -1054,34 +1104,27 @@ function renderAdmin() {
         <div style="font-weight:800;font-size:18px">⚙️ Admin</div>
         <button onclick="logoutAdmin()" style="background:none;border:1px solid #1a2540;border-radius:8px;color:#a8b8c8;padding:6px 10px;font-size:12px;flex-shrink:0">Sair</button>
       </div>
-      ${playersMgmt}
-      ${autoResultsCard}
-      ${champCard}
-      <div class="label" style="margin-bottom:10px">RESULTADOS — GRUPOS</div>
-      <div class="groups-scroll">${groupBtns}</div>
-      ${groupCards}
-      <button class="btn-gold" onclick="saveGroupResults()">💾 Salvar Resultados Grupos</button>
-      <div style="margin-top:24px"></div>
-      ${teamsCard}
-      ${koResultsCard}
+      ${adminTabs}
+      ${adminContent}
     </div>`;
 }
+window.setAdminTab = function(tab) {
+  adminTab = tab;
+  renderAdmin();
+};
 
-window.tryAdmin = async function() {
-  const email = document.getElementById("admin-email").value.trim();
+window.tryAdmin = function() {
   const pass = document.getElementById("admin-pass").value;
-  if(!email || !pass) { showToast("Informe email e senha do admin","err"); return; }
-  try {
-    await auth.signInWithEmailAndPassword(email, pass);
+  if(pass === ADMIN_PASSWORD) {
+    adminUnlocked = true;
     showToast("Admin autenticado!");
-  } catch (err) {
-    showToast("Login do admin invalido","err");
+    renderAdmin();
+  } else {
+    showToast("Senha do admin incorreta","err");
   }
 };
-window.logoutAdmin = async function() {
-  await auth.signOut();
+window.logoutAdmin = function() {
   adminUnlocked = false;
-  adminUser = null;
   renderAdmin();
 };
 
@@ -1089,8 +1132,13 @@ window.setAdminFilter = function(g) { adminFilter=g; renderAdmin(); };
 
 window.deletePlayer = async function(id, name) {
   if(!confirm(`Remover ${name} do bolão? Essa ação também apaga os palpites dele.`)) return;
-  await db.ref(`players/${id}`).remove();
-  await db.ref(`guesses/${id}`).remove();
+  try {
+    await db.ref(`players/${id}`).remove();
+    await db.ref(`guesses/${id}`).remove();
+  } catch (err) {
+    showToast("Nao foi possivel remover participante","err");
+    return;
+  }
   if(myPlayerId === id) { myPlayerId = null; localStorage.removeItem('bcp_me'); }
   showToast(`${name} removido do bolão`);
   renderAdmin();
@@ -1107,13 +1155,15 @@ window.savePlayerName = async function(id) {
   if(players.find(p=>p.id!==id && p.name.toLowerCase()===newName.toLowerCase())) {
     showToast("Nome já existe!", "err"); return;
   }
-  await db.ref(`players/${id}/name`).set(newName);
+  try { await db.ref(`players/${id}/name`).set(newName); }
+  catch (err) { showToast("Nao foi possivel atualizar o nome","err"); return; }
   editingPlayerId = null;
   showToast("Nome atualizado! ✅");
 };
 
 window.savePlayerIcon = async function(id, icon) {
-  await db.ref(`players/${id}/icon`).set(icon);
+  try { await db.ref(`players/${id}/icon`).set(icon); }
+  catch (err) { showToast("Nao foi possivel atualizar o icone","err"); return; }
   editingPlayerId = null;
   showToast("Ícone atualizado! ✅");
 };
@@ -1126,7 +1176,8 @@ window.saveGroupResults = async function() {
     if(inp.value!=="") updates[`results/${mid}/${side}`] = +inp.value;
   });
   if(!Object.keys(updates).length) { showToast("Nenhum resultado para salvar!","err"); return; }
-  await db.ref().update(updates);
+  try { await db.ref().update(updates); }
+  catch (err) { showToast("Nao foi possivel salvar resultados","err"); return; }
   showToast("Resultados salvos! ✅");
 };
 
@@ -1139,7 +1190,8 @@ window.saveKnockoutTeams = async function() {
     if(v) updates[`knockout_teams/${kid}/${side}`] = v;
   });
   if(!Object.keys(updates).length) { showToast("Preencha ao menos um time!","err"); return; }
-  await db.ref().update(updates);
+  try { await db.ref().update(updates); }
+  catch (err) { showToast("Nao foi possivel salvar os times","err"); return; }
   showToast("Times salvos! ✅");
 };
 
@@ -1151,7 +1203,8 @@ window.saveKnockoutResults = async function() {
     if(inp.value!=="") updates[`results/${mid}/${side}`] = +inp.value;
   });
   if(!Object.keys(updates).length) { showToast("Nenhum resultado para salvar!","err"); return; }
-  await db.ref().update(updates);
+  try { await db.ref().update(updates); }
+  catch (err) { showToast("Nao foi possivel salvar resultados","err"); return; }
   showToast("Resultados eliminatória salvos! ✅");
 };
 
@@ -1160,7 +1213,8 @@ window.saveRealChampion = async function() {
   if(!inp) { openAdminChampPicker(); return; }
   const v = inp.value.trim();
   if(!v) { showToast("Informe o país campeão!","err"); return; }
-  await db.ref("champion").set(v);
+  try { await db.ref("champion").set(v); }
+  catch (err) { showToast("Nao foi possivel registrar o campeao","err"); return; }
   showToast("Campeão registrado! 🏆");
 };
 
@@ -1171,17 +1225,10 @@ window.closeRules = function() { document.getElementById("modal-rules").style.di
 // ── Modal de senha ────────────────────────────────────────────────────────
 function closeModal() { document.getElementById("modal-pass").style.display="none"; }
 
-async function ensureAnonymousAuth() {
-  if(auth.currentUser) return auth.currentUser;
-  const cred = await auth.signInAnonymously();
-  return cred.user;
-}
-
 window.confirmPass = async function() {
   const player = players.find(p=>p.id===pendingPlayerId);
   const entered = document.getElementById("modal-pass-inp").value;
   if(await verifyPlayerPassword(player, entered)) {
-    await ensurePlayerOwner(player);
     await migrateLegacyPassword(player, entered);
     myPlayerId = pendingPlayerId; localStorage.setItem('bcp_me', pendingPlayerId);
     closeModal(); currentPlayer = player; gameFilter="Todos"; goTo("game");

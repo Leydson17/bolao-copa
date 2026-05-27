@@ -1,37 +1,6 @@
 {
   "rules": {
     ".read": true,
-    ".write": false,
-    "admins": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": false
-      }
-    },
-    "players": {
-      "$playerId": {
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || (!data.exists() && newData.child('ownerUid').val() === auth.uid) || data.child('ownerUid').val() === auth.uid)",
-        ".validate": "newData.hasChildren(['id', 'name'])"
-      }
-    },
-    "guesses": {
-      "$playerId": {
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('players').child($playerId).child('ownerUid').val() === auth.uid)"
-      }
-    },
-    "results": {
-      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
-    },
-    "knockout_teams": {
-      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
-    },
-    "champion": {
-      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
-    },
-    "champion_guesses": {
-      "$playerId": {
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('players').child($playerId).child('ownerUid').val() === auth.uid)"
-      }
-    }
+    ".write": true
   }
 }
