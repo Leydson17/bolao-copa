@@ -69,9 +69,9 @@ img{max-width:100%;height:auto}
   .card{padding:14px 10px;border-radius:12px}
   .match-card{padding:10px 8px;border-radius:12px}
   .match-teams-row{grid-template-columns:1fr;gap:8px}
-  .team-side{width:100%;justify-content:flex-start!important;background:rgba(8,16,32,.45);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:7px 8px}
-  .team-side[style*="justify-content:flex-end"]{flex-direction:row-reverse}
-  .team-name{font-size:12px;white-space:normal;line-height:1.25;text-align:left!important}
+  .team-side{width:100%;background:rgba(8,16,32,.45);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:7px 8px}
+  .team-side[style*="justify-content:flex-end"]{justify-content:flex-end!important}
+  .team-name{font-size:12px;white-space:normal;line-height:1.25}
   .score-box{justify-content:center;width:100%;padding:2px 0}
   .score-inp{width:42px;height:40px;font-size:16px}
   .group-btn{padding:6px 12px}
