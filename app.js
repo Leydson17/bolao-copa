@@ -1216,8 +1216,11 @@ window.autoSaveAdminResult = async function(mid, source) {
 window.deletePlayer = async function(id, name) {
   if(!confirm(`Remover ${name} do bolão? Essa ação também apaga os palpites dele.`)) return;
   try {
-    await db.ref(`players/${id}`).remove();
-    await db.ref(`guesses/${id}`).remove();
+    await db.ref().update({
+      [`players/${id}`]: null,
+      [`guesses/${id}`]: null,
+      [`champion_guesses/${id}`]: null
+    });
   } catch (err) {
     showToast("Nao foi possivel remover participante","err");
     return;
