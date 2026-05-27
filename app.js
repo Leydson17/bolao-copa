@@ -751,11 +751,14 @@ window.autoSaveGuess = async function(mid) {
   if(myPlayerId && currentPlayer.id !== myPlayerId) return;
   const hi = document.querySelector(`.score-inp[data-mid="${mid}"][data-side="home"]`);
   const ai = document.querySelector(`.score-inp[data-mid="${mid}"][data-side="away"]`);
-  if(!hi || !ai || hi.value === "" || ai.value === "") return;
+  if(!hi || !ai) return;
+  if(hi.value !== "" && ai.value === "") ai.value = "0";
+  if(ai.value !== "" && hi.value === "") hi.value = "0";
+  if(hi.value === "" || ai.value === "") return;
   const m = [...matches,...knockoutMatches].find(m=>m.id===mid);
   if(!canEditGuess(m, true)) { showToast("Palpite bloqueado: jogo ja iniciou","err"); return; }
   const prev = guesses[currentPlayer.id]?.[mid];
-  if(prev && prev.home===+hi.value && prev.away===+ai.value) return;
+  if(prev !== undefined && prev !== null && prev.home===+hi.value && prev.away===+ai.value) return;
   try {
     await db.ref(`guesses/${currentPlayer.id}/${mid}`).set({home:+hi.value, away:+ai.value});
   } catch (err) {
