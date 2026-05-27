@@ -165,6 +165,8 @@ let prevRankingOrder = JSON.parse(localStorage.getItem('bcp_rank_order') || '[]'
 let compareP1 = null;
 let compareP2 = null;
 const savedGuessFeedback = {};
+const savedAdminResultFeedback = {};
+const guessSaveTimers = {};
 
 // ── Toast ─────────────────────────────────────────────────────────────────
 let toastTimer;
@@ -202,6 +204,9 @@ function matchTime(m) {
   return Date.UTC(2026, month - 1, day, hour + 3, min);
 }
 function isLocked(m) { return Date.now() >= matchTime(m); }
+function canEditGuess(m, isMyScreen) {
+  return isMyScreen && m && m.home !== "?" && m.away !== "?" && Date.now() < matchTime(m);
+}
 function isLive(m) { const t = matchTime(m); const n = Date.now(); return n >= t && n < t + 9000000; }
 function isFinished(m) { return Date.now() >= matchTime(m) + 9000000; }
 function matchStatusBadge(m) {
@@ -680,7 +685,7 @@ function renderGame() {
       }
       const bl = (m.realHome!==null&&g!==undefined) ? `border-left:3px solid ${COLORS[calcPts(g,m)]}`
         : (locked||m.realHome!==null) ? "border-left:3px solid #2a2a2a" : "";
-      const inputDisabled = !teamsSet||locked||!isMyScreen;
+      const inputDisabled = !canEditGuess(m, isMyScreen);
       const phaseLabel = m.phase
         ? `${KNOCKOUT_PHASES.find(p=>p.code===m.phase)?.label||m.phase}`
         : `Grupo ${m.group} • R${m.rodada}`;
@@ -695,12 +700,12 @@ function renderGame() {
           ${matchStatusBadge(m)}
           <span style="font-size:10px;color:#00e676;min-width:42px;text-align:right">${savedGuessFeedback[m.id] || ''}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:4px">
+        <div class="match-teams-row">
           <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${homeD}</span></div>
-          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-            <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
+          <div class="score-box">
+            <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2); scheduleAutoSaveGuess(${m.id})" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
             <span style="color:#4a5a6e;font-weight:700">×</span>
-            <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
+            <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2); scheduleAutoSaveGuess(${m.id})" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
           </div>
           <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${awayD}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
         </div>
@@ -736,6 +741,11 @@ function renderGame() {
     </div>`;
 }
 
+window.scheduleAutoSaveGuess = function(mid) {
+  clearTimeout(guessSaveTimers[mid]);
+  guessSaveTimers[mid] = setTimeout(() => autoSaveGuess(mid), 600);
+};
+
 window.autoSaveGuess = async function(mid) {
   if(!currentPlayer) return;
   if(myPlayerId && currentPlayer.id !== myPlayerId) return;
@@ -743,13 +753,13 @@ window.autoSaveGuess = async function(mid) {
   const ai = document.querySelector(`.score-inp[data-mid="${mid}"][data-side="away"]`);
   if(!hi || !ai || hi.value === "" || ai.value === "") return;
   const m = [...matches,...knockoutMatches].find(m=>m.id===mid);
-  if(!m || isLocked(m) || m.home==="?" || m.away==="?") return;
+  if(!canEditGuess(m, true)) { showToast("Palpite bloqueado: jogo ja iniciou","err"); return; }
   const prev = guesses[currentPlayer.id]?.[mid];
   if(prev && prev.home===+hi.value && prev.away===+ai.value) return;
   try {
     await db.ref(`guesses/${currentPlayer.id}/${mid}`).set({home:+hi.value, away:+ai.value});
   } catch (err) {
-    showToast("Nao foi possivel salvar o palpite","err");
+    showToast("Nao foi possivel salvar. Verifique a conexao e o Firebase.","err");
     return;
   }
   savedGuessFeedback[mid] = "salvo";
@@ -1007,15 +1017,16 @@ function renderAdmin() {
         <span style="color:#FFD700;font-weight:700">Grupo ${m.group} • R${m.rodada}</span><span>${m.date} ${m.time}</span>
       </div>
       <div style="margin-bottom:8px">${matchStatusBadge(m)}</div>
-      <div style="display:flex;align-items:center;gap:4px">
+      <div class="match-teams-row">
         <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${escapeHtml(m.home)}</span></div>
-        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+        <div class="score-box">
+          <input class="score-inp" data-mid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" onblur="autoSaveAdminResult(${m.id}, 'group')" inputmode="numeric"/>
           <span style="color:#4a5a6e;font-weight:700">×</span>
-          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+          <input class="score-inp" data-mid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" onblur="autoSaveAdminResult(${m.id}, 'group')" inputmode="numeric"/>
         </div>
         <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${escapeHtml(m.away)}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
       </div>
+      <div class="save-hint">${savedAdminResultFeedback[m.id] || ''}</div>
     </div>`;
   });
 
@@ -1050,15 +1061,16 @@ function renderAdmin() {
         <span style="color:#FFD700;font-weight:700">${ph?.label||m.phase} • ${m.date}</span>
       </div>
       <div style="margin-bottom:8px">${matchStatusBadge(m)}</div>
-      <div style="display:flex;align-items:center;gap:4px">
+      <div class="match-teams-row">
         <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${escapeHtml(m.home)}</span></div>
-        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-          <input class="score-inp" data-krid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+        <div class="score-box">
+          <input class="score-inp" data-krid="${m.id}" data-side="home" value="${m.realHome!==null?m.realHome:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" onblur="autoSaveAdminResult(${m.id}, 'ko')" inputmode="numeric"/>
           <span style="color:#4a5a6e;font-weight:700">×</span>
-          <input class="score-inp" data-krid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" inputmode="numeric"/>
+          <input class="score-inp" data-krid="${m.id}" data-side="away" value="${m.realAway!==null?m.realAway:''}" placeholder="?" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2)" onblur="autoSaveAdminResult(${m.id}, 'ko')" inputmode="numeric"/>
         </div>
         <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${escapeHtml(m.away)}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
       </div>
+      <div class="save-hint">${savedAdminResultFeedback[m.id] || ''}</div>
     </div>`;
   });
   const koResultsCard = `<div class="card">
@@ -1129,6 +1141,36 @@ window.logoutAdmin = function() {
 };
 
 window.setAdminFilter = function(g) { adminFilter=g; renderAdmin(); };
+
+window.autoSaveAdminResult = async function(mid, source) {
+  if(!adminUnlocked) return;
+  const attr = source === 'ko' ? 'data-krid' : 'data-mid';
+  const hi = document.querySelector(`#screen-admin .score-inp[${attr}="${mid}"][data-side="home"]`);
+  const ai = document.querySelector(`#screen-admin .score-inp[${attr}="${mid}"][data-side="away"]`);
+  if(!hi || !ai || hi.value === "" || ai.value === "") return;
+
+  const m = [...matches, ...knockoutMatches].find(game => game.id === mid);
+  if(m && m.realHome === +hi.value && m.realAway === +ai.value) return;
+
+  try {
+    await db.ref(`results/${mid}`).set({home:+hi.value, away:+ai.value});
+  } catch (err) {
+    showToast("Nao foi possivel salvar o placar","err");
+    return;
+  }
+
+  savedAdminResultFeedback[mid] = "placar salvo";
+  showToast("Placar salvo automaticamente!");
+  const card = hi.closest('.match-card');
+  if(card) {
+    card.style.outline = '2px solid #00e676';
+    setTimeout(() => { card.style.outline = ''; }, 1000);
+  }
+  setTimeout(() => {
+    delete savedAdminResultFeedback[mid];
+    if(document.getElementById("screen-admin").classList.contains("active")) renderAdmin();
+  }, 1400);
+};
 
 window.deletePlayer = async function(id, name) {
   if(!confirm(`Remover ${name} do bolão? Essa ação também apaga os palpites dele.`)) return;

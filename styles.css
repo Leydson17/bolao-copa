@@ -35,12 +35,15 @@ img{max-width:100%;height:auto}
 .header>div{min-width:0;flex:1}
 .back-btn{background:none;border:1px solid #1a2540;border-radius:8px;color:#777;padding:6px 12px;font-size:16px;flex-shrink:0}
 .match-card{background:rgba(15,22,38,.88);border-radius:14px;padding:12px;border:1px solid rgba(255,255,255,.07);margin-bottom:10px;overflow:hidden}
+.match-teams-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px}
+.score-box{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .score-inp{width:38px;height:38px;background:#0d1525;border:1px solid #1a2540;border-radius:8px;color:#FFD700;font-size:17px;font-weight:700;text-align:center;flex-shrink:0}
 .group-btn{background:#131929;color:#666;border:1px solid #1a2540;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
 .group-btn.active{background:#FFD700;color:#000}
 .groups-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
 .team-side{flex:1;display:flex;align-items:center;gap:5px;min-width:0;overflow:hidden}
 .team-name{font-size:11px;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.save-hint{min-height:14px;margin-top:6px;text-align:center;font-size:10px;font-weight:800;color:#00e676}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:30px;font-weight:700;z-index:9999;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
 .loading{display:flex;align-items:center;justify-content:center;gap:10px;color:#a8b8c8;font-size:14px;padding:40px 0}
 #app>div{display:none}
@@ -61,13 +64,21 @@ img{max-width:100%;height:auto}
 .status-locked{background:#111827;color:#7a8aa8;border-color:#273246}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9998}
 .modal-box{background:#131929;border-radius:16px;padding:24px 20px;width:90%;max-width:340px;border:1px solid #1a2540}
-@media (max-width:420px){
-  .screen{padding:16px 10px 72px}
-  .card{padding:14px 12px;border-radius:12px}
-  .match-card{padding:10px}
-  .team-name{font-size:10px;white-space:normal;line-height:1.2}
-  .score-inp{width:34px;height:34px;font-size:15px}
-  .group-btn{padding:5px 11px}
-  .header{gap:8px}
+@media (max-width:520px){
+  .screen{width:100%;max-width:none;padding:14px 8px 72px}
+  .card{padding:14px 10px;border-radius:12px}
+  .match-card{padding:10px 8px;border-radius:12px}
+  .match-teams-row{grid-template-columns:1fr;gap:8px}
+  .team-side{width:100%;justify-content:flex-start!important;background:rgba(8,16,32,.45);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:7px 8px}
+  .team-side[style*="justify-content:flex-end"]{flex-direction:row-reverse}
+  .team-name{font-size:12px;white-space:normal;line-height:1.25;text-align:left!important}
+  .score-box{justify-content:center;width:100%;padding:2px 0}
+  .score-inp{width:42px;height:40px;font-size:16px}
+  .group-btn{padding:6px 12px}
+  .header{gap:8px;margin-bottom:14px}
+  .header>div{font-size:16px!important}
   .back-btn{padding:6px 9px}
+  .btn{min-height:42px}
+  .btn-outline{font-size:12px}
+  .player-btn{padding:10px}
 }
