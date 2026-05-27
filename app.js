@@ -34,8 +34,10 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
 const escapeJsArg = value => escapeHtml(JSON.stringify(String(value ?? '')));
 const safeInitial = value => escapeHtml(String(value || '?').trim().charAt(0).toUpperCase() || '?');
 
+const SUBDIV_EMOJI = {"gb-sct":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","gb-eng":"🏴󠁧󠁢󠁥󠁮󠁧󠁿"};
+const isoEmoji = code => SUBDIV_EMOJI[code] || code.toUpperCase().replace(/[A-Z]/g, c => String.fromCodePoint(0x1F1E6+c.charCodeAt(0)-65));
 const fl = n => ISO[n]
-  ? `<img src="https://flagcdn.com/w40/${ISO[n]}.png" style="height:22px;width:auto;border-radius:2px;vertical-align:middle" alt="${escapeHtml(n)}">`
+  ? `<img src="https://flagcdn.com/w40/${ISO[n]}.png" style="height:22px;width:auto;border-radius:2px;vertical-align:middle" alt="${escapeHtml(n)}" onerror="this.outerHTML='${isoEmoji(ISO[n])}';">`
   : "🏳️";
 
 function randomSalt() {
