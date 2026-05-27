@@ -10,6 +10,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+const auth = firebase.auth();
 const ADMIN_PASSWORD = 'leyd1703@';
 
 // ── Dados dos jogos ───────────────────────────────────────────────────────
@@ -63,6 +64,24 @@ async function migrateLegacyPassword(player, password) {
   const fields = await makePasswordFields(password);
   await db.ref(`players/${player.id}`).update({...fields, pass:null});
   Object.assign(player, fields, {pass:null});
+}
+async function ensureAnonymousAuth() {
+  if (auth.currentUser) return auth.currentUser;
+  const cred = await auth.signInAnonymously();
+  return cred.user;
+}
+async function ensurePlayerOwner(player) {
+  const user = await ensureAnonymousAuth();
+  if (player.ownerUid === user.uid) return user;
+  try {
+    await db.ref(`players/${player.id}/ownerUid`).set(user.uid);
+    player.ownerUid = user.uid;
+  } catch(e) {
+    if((e.code || '').includes('PERMISSION_DENIED')) {
+      showToast("Sessão vinculada a outro dispositivo. Peça ao admin para resetar.", "err");
+    }
+  }
+  return user;
 }
 
 const BASE_MATCHES = [
@@ -164,6 +183,8 @@ let autoResultsRunning = false;
 let prevRankingOrder = JSON.parse(localStorage.getItem('bcp_rank_order') || '[]');
 let compareP1 = null;
 let compareP2 = null;
+let authUser = null;
+auth.onAuthStateChanged(user => { authUser = user; });
 const savedGuessFeedback = {};
 const savedAdminResultFeedback = {};
 const guessSaveTimers = {};
@@ -531,9 +552,12 @@ window.addPlayer = async function() {
   if(!name) return;
   if(!pass) { showToast("Crie uma senha!","err"); return; }
   if(players.find(p=>p.name.toLowerCase()===name.toLowerCase())) { showToast("Nome já existe!","err"); return; }
+  let ownerUid;
+  try { ownerUid = (await ensureAnonymousAuth()).uid; }
+  catch(e) { showToast("Erro de autenticação. Tente novamente.","err"); return; }
   const id = "p_"+Date.now();
   const passFields = await makePasswordFields(pass);
-  await db.ref(`players/${id}`).set({id, name, ...passFields, icon: selectedIcon});
+  await db.ref(`players/${id}`).set({id, name, ...passFields, icon: selectedIcon, ownerUid});
   myPlayerId = id; localStorage.setItem('bcp_me', id);
   selectedIcon = '';
   inp.value = ""; passInp.value = "";
@@ -994,6 +1018,7 @@ function renderAdmin() {
           <span style="flex:1;font-weight:600">${escapeHtml(p.name)}</span>
           <span style="font-size:11px;color:#6b7a8c">${playerFilled(p.id)}/${guessableTotal}</span>
           <button onclick="editPlayer(${escapeJsArg(p.id)})" style="background:#1a2540;border:none;border-radius:8px;color:#aaa;padding:5px 10px;font-size:14px;cursor:pointer">✏️</button>
+          <button onclick="resetPlayerOwner(${escapeJsArg(p.id)},${escapeJsArg(p.name)})" style="background:#1a2540;border:none;border-radius:8px;color:#aaa;padding:5px 10px;font-size:12px;cursor:pointer" title="Resetar sessão do dispositivo">🔗</button>
           <button onclick="deletePlayer(${escapeJsArg(p.id)},${escapeJsArg(p.name)})" style="background:#c62828;border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
         </div>`;
       }).join('')}
@@ -1100,6 +1125,16 @@ function renderAdmin() {
         ['config','Config']
       ].map(([code,label]) => `<button class="group-btn${adminTab===code?' active':''}" onclick="setAdminTab('${code}')">${label}</button>`).join('')}
     </div>`;
+  const adminUid = auth.currentUser?.uid || '(faça login como admin para ver)';
+  const authSetupCard = `<div class="card">
+    <div class="label">AUTENTICAÇÃO DO ADMIN</div>
+    <p style="font-size:12px;color:#8896a8;line-height:1.5;margin-bottom:8px">Para salvar resultados, adicione seu UID no Firebase Console → Realtime Database → <b>/admins/{UID}</b> = <b>true</b>.</p>
+    <div style="background:#0d1525;border-radius:8px;padding:10px;margin-bottom:8px">
+      <div style="font-size:10px;color:#FFD700;font-weight:700;letter-spacing:1px;margin-bottom:4px">SEU UID ATUAL</div>
+      <div style="font-size:11px;color:#ccc;word-break:break-all;font-family:monospace">${escapeHtml(adminUid)}</div>
+    </div>
+    <button onclick="navigator.clipboard.writeText(${escapeJsArg(adminUid)}).then(()=>showToast('UID copiado!'))" class="btn btn-outline" style="width:100%;padding:9px">📋 Copiar UID</button>
+  </div>`;
   const adminContent = adminTab === 'participantes'
     ? `${playersMgmt || '<div class="card"><p style="color:#6b7a8c;font-size:12px;text-align:center">Nenhum participante ainda</p></div>'}`
     : adminTab === 'resultados'
@@ -1110,7 +1145,7 @@ function renderAdmin() {
         <button class="btn-gold" onclick="saveGroupResults()">💾 Salvar Resultados Grupos</button>`
       : adminTab === 'eliminatoria'
         ? `${teamsCard}${koResultsCard}`
-        : `${champCard}${autoResultsCard}`;
+        : `${champCard}${autoResultsCard}${authSetupCard}`;
 
   document.getElementById("screen-admin").innerHTML = `
     <div class="screen">
@@ -1128,10 +1163,11 @@ window.setAdminTab = function(tab) {
   renderAdmin();
 };
 
-window.tryAdmin = function() {
+window.tryAdmin = async function() {
   const pass = document.getElementById("admin-pass").value;
   if(pass === ADMIN_PASSWORD) {
     adminUnlocked = true;
+    try { await ensureAnonymousAuth(); } catch(e) {}
     showToast("Admin autenticado!");
     renderAdmin();
   } else {
@@ -1189,6 +1225,15 @@ window.deletePlayer = async function(id, name) {
   renderAdmin();
 };
 
+window.resetPlayerOwner = async function(id, name) {
+  if(!confirm(`Resetar sessão de ${name}?\nNa próxima vez que entrar com a senha, o dispositivo será vinculado novamente.`)) return;
+  try {
+    await db.ref(`players/${id}/ownerUid`).remove();
+    showToast(`Sessão de ${name} resetada!`);
+  } catch(err) {
+    showToast("Sem permissão. Seu UID precisa estar em /admins no Firebase.", "err");
+  }
+};
 window.editPlayer = function(id) {
   editingPlayerId = editingPlayerId === id ? null : id;
   renderAdmin();
@@ -1215,10 +1260,18 @@ window.savePlayerIcon = async function(id, icon) {
 
 window.saveGroupResults = async function() {
   const inputs = document.querySelectorAll("#screen-admin [data-mid]");
-  const updates = {};
+  const pairs = {};
   inputs.forEach(inp => {
-    const mid = +inp.dataset.mid, side = inp.dataset.side;
-    if(inp.value!=="") updates[`results/${mid}/${side}`] = +inp.value;
+    const mid = +inp.dataset.mid;
+    if(!pairs[mid]) pairs[mid] = {};
+    pairs[mid][inp.dataset.side] = inp.value;
+  });
+  const updates = {};
+  Object.entries(pairs).forEach(([mid, sides]) => {
+    if(sides.home !== "" && sides.away !== "") {
+      updates[`results/${mid}/home`] = +sides.home;
+      updates[`results/${mid}/away`] = +sides.away;
+    }
   });
   if(!Object.keys(updates).length) { showToast("Nenhum resultado para salvar!","err"); return; }
   try { await db.ref().update(updates); }
@@ -1242,10 +1295,18 @@ window.saveKnockoutTeams = async function() {
 
 window.saveKnockoutResults = async function() {
   const inputs = document.querySelectorAll("#screen-admin [data-krid]");
-  const updates = {};
+  const pairs = {};
   inputs.forEach(inp => {
-    const mid = +inp.dataset.krid, side = inp.dataset.side;
-    if(inp.value!=="") updates[`results/${mid}/${side}`] = +inp.value;
+    const mid = +inp.dataset.krid;
+    if(!pairs[mid]) pairs[mid] = {};
+    pairs[mid][inp.dataset.side] = inp.value;
+  });
+  const updates = {};
+  Object.entries(pairs).forEach(([mid, sides]) => {
+    if(sides.home !== "" && sides.away !== "") {
+      updates[`results/${mid}/home`] = +sides.home;
+      updates[`results/${mid}/away`] = +sides.away;
+    }
   });
   if(!Object.keys(updates).length) { showToast("Nenhum resultado para salvar!","err"); return; }
   try { await db.ref().update(updates); }
@@ -1275,6 +1336,7 @@ window.confirmPass = async function() {
   const entered = document.getElementById("modal-pass-inp").value;
   if(await verifyPlayerPassword(player, entered)) {
     await migrateLegacyPassword(player, entered);
+    await ensurePlayerOwner(player);
     myPlayerId = pendingPlayerId; localStorage.setItem('bcp_me', pendingPlayerId);
     closeModal(); currentPlayer = player; gameFilter="Todos"; goTo("game");
   } else {
