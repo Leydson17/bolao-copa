@@ -566,7 +566,7 @@ window.addPlayer = async function() {
 
 window.selectPlayer = function(id) {
   const player = players.find(p=>p.id===id);
-  if(myPlayerId === id) { currentPlayer = player; gameFilter="Todos"; goTo("game"); return; }
+  if(myPlayerId === id) { currentPlayer = player; gameFilter="Todos"; goTo("game"); ensurePlayerOwner(player).catch(()=>{}); return; }
   if(!player.pass && !player.passHash) {
     if(!myPlayerId) { myPlayerId = id; localStorage.setItem('bcp_me', id); }
     currentPlayer = player; gameFilter="Todos"; goTo("game"); return;
@@ -783,6 +783,7 @@ window.autoSaveGuess = async function(mid) {
   if(!canEditGuess(m, true)) { showToast("Palpite bloqueado: jogo ja iniciou","err"); return; }
   const prev = guesses[currentPlayer.id]?.[mid];
   if(prev !== undefined && prev !== null && prev.home===+hi.value && prev.away===+ai.value) return;
+  try { await ensurePlayerOwner(currentPlayer); } catch(e) { showToast("Erro de autenticação","err"); return; }
   try {
     await db.ref(`guesses/${currentPlayer.id}/${mid}`).set({home:+hi.value, away:+ai.value});
   } catch (err) {
@@ -869,6 +870,7 @@ window.closeChampPicker = function() {
 window.filterChampList = function(q) { buildChampList(q); };
 window.pickChamp = async function(team) {
   if(!currentPlayer) return;
+  try { await ensurePlayerOwner(currentPlayer); } catch(e) { showToast("Erro de autenticação","err"); return; }
   await db.ref(`champion_guesses/${currentPlayer.id}`).set(team);
   closeChampPicker();
   showToast(`Palpite do campeão: ${team} 🏆`);
