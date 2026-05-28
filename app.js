@@ -403,9 +403,12 @@ window.runAutoResultSync = runAutoResultSync;
 
 // ── Firebase listeners ────────────────────────────────────────────────────
 function rerender(screens) {
+  const focused = document.activeElement;
   screens.forEach(s => {
-    if(document.getElementById("screen-"+s).classList.contains("active"))
-      ({home:renderHome,game:renderGame,ranking:renderRanking,admin:renderAdmin})[s]();
+    const el = document.getElementById("screen-"+s);
+    if(!el.classList.contains("active")) return;
+    if(focused && el.contains(focused) && (focused.tagName==="INPUT"||focused.tagName==="TEXTAREA")) return;
+    ({home:renderHome,game:renderGame,ranking:renderRanking,admin:renderAdmin})[s]();
   });
 }
 function initFirebase() {
@@ -798,7 +801,9 @@ window.autoSaveGuess = async function(mid) {
   }
   setTimeout(() => {
     delete savedGuessFeedback[mid];
-    if(document.getElementById("screen-game").classList.contains("active")) renderGame();
+    const scr = document.getElementById("screen-game");
+    const focused = document.activeElement;
+    if(scr.classList.contains("active") && !(focused && scr.contains(focused) && (focused.tagName==="INPUT"||focused.tagName==="TEXTAREA"))) renderGame();
   }, 1200);
 };
 
