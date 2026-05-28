@@ -420,7 +420,7 @@ function initFirebase() {
   });
   db.ref("guesses").on("value", snap => {
     guesses = snap.val() || {};
-    rerender(["home","game","ranking"]);
+    rerender(["home","ranking"]);
   });
   db.ref("results").on("value", snap => {
     const incoming = snap.val() || {};
