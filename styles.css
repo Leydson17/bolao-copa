@@ -81,3 +81,11 @@ img{max-width:100%;height:auto}
   .btn-outline{font-size:12px}
   .player-btn{padding:10px}
 }
+@media (max-width:390px){
+  .match-teams-row{grid-template-columns:1fr;gap:6px}
+  .team-side{width:100%;background:rgba(8,16,32,.45);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:6px 8px}
+  .team-side:last-child{flex-direction:row-reverse}
+  .score-box{justify-content:center;width:100%;gap:8px}
+  .score-inp{width:44px;height:42px;font-size:18px}
+  .team-name{font-size:12px;white-space:normal;line-height:1.2}
+}

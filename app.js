@@ -1496,5 +1496,12 @@ window.shareRanking = async function() {
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────
+// Scroll mínimo ao focar input de placar (evita rolar demais no iOS)
+document.addEventListener('focusin', e => {
+  if(e.target.classList.contains('score-inp')) {
+    setTimeout(() => e.target.scrollIntoView({block:'nearest',behavior:'instant'}), 350);
+  }
+});
+
 initFirebase();
 renderHome();
