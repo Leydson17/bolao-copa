@@ -10,7 +10,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const auth = firebase.auth();
+const auth = (typeof firebase.auth === 'function') ? firebase.auth() : null;
 const ADMIN_PASSWORD = 'leyd1703@';
 
 // ── Dados dos jogos ───────────────────────────────────────────────────────
@@ -66,12 +66,14 @@ async function migrateLegacyPassword(player, password) {
   Object.assign(player, fields, {pass:null});
 }
 async function ensureAnonymousAuth() {
+  if (!auth) return null;
   if (auth.currentUser) return auth.currentUser;
   const cred = await auth.signInAnonymously();
   return cred.user;
 }
 async function ensurePlayerOwner(player) {
   const user = await ensureAnonymousAuth();
+  if (!user) return null;
   if (player.ownerUid === user.uid) return user;
   try {
     await db.ref(`players/${player.id}/ownerUid`).set(user.uid);
@@ -184,7 +186,7 @@ let prevRankingOrder = JSON.parse(localStorage.getItem('bcp_rank_order') || '[]'
 let compareP1 = null;
 let compareP2 = null;
 let authUser = null;
-auth.onAuthStateChanged(user => { authUser = user; });
+if(auth) auth.onAuthStateChanged(user => { authUser = user; });
 const savedGuessFeedback = {};
 const savedAdminResultFeedback = {};
 const guessSaveTimers = {};
