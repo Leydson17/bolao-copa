@@ -810,12 +810,14 @@ window.autoSaveGuess = async function(mid) {
 };
 
 window.setGameFilter = function(g) {
+  const y = window.scrollY;
+  const bar = document.querySelector('#screen-game .groups-scroll');
+  const x = bar ? bar.scrollLeft : 0;
   gameFilter = g;
   renderGame();
-  requestAnimationFrame(() => {
-    const bar = document.querySelector('#screen-game .groups-scroll');
-    if(bar) window.scrollTo(0, bar.getBoundingClientRect().top + window.scrollY);
-  });
+  window.scrollTo(0, y);
+  const newBar = document.querySelector('#screen-game .groups-scroll');
+  if(newBar) newBar.scrollLeft = x;
 };
 
 window.saveGuesses = async function() {
