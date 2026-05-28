@@ -810,10 +810,12 @@ window.autoSaveGuess = async function(mid) {
 };
 
 window.setGameFilter = function(g) {
-  const sy = window.scrollY;
   gameFilter = g;
   renderGame();
-  requestAnimationFrame(() => window.scrollTo(0, sy));
+  requestAnimationFrame(() => {
+    const bar = document.querySelector('#screen-game .groups-scroll');
+    if(bar) window.scrollTo(0, bar.getBoundingClientRect().top + window.scrollY);
+  });
 };
 
 window.saveGuesses = async function() {
