@@ -126,7 +126,7 @@ const BASE_MATCHES = [
 const KNOCKOUT_PHASES = [
   {code:"R32",label:"Fase 32"},{code:"R16",label:"Oitavas"},
   {code:"QF",label:"Quartas"},{code:"SF",label:"Semifinal"},
-  {code:"3P",label:"3º Lugar"},{code:"F",label:"🏆 Final"},
+  {code:"3P",label:"3º Lugar"},{code:"FIN",label:"🏆 Final"},
 ];
 const BASE_KNOCKOUT = [
   {id:101,phase:"R32",date:"29/06",time:"12:00"},{id:102,phase:"R32",date:"29/06",time:"16:00"},
@@ -145,7 +145,7 @@ const BASE_KNOCKOUT = [
   {id:127,phase:"QF",date:"12/07",time:"16:00"},{id:128,phase:"QF",date:"12/07",time:"22:00"},
   {id:129,phase:"SF",date:"15/07",time:"22:00"},{id:130,phase:"SF",date:"16/07",time:"22:00"},
   {id:131,phase:"3P",date:"18/07",time:"14:00"},
-  {id:132,phase:"F",date:"19/07",time:"17:00"},
+  {id:132,phase:"FIN",date:"19/07",time:"17:00"},
 ].map(m=>({...m,home:"?",away:"?",homeFlag:"🏳️",awayFlag:"🏳️",realHome:null,realAway:null}));
 
 const ICONS = ['🦁','🐯','🦊','🐺','🐻','🐼','🦋','🦅','🦈','🐬','🐉','🦄','🦓','🐘','🦀','🐸','🐧','🦉',
