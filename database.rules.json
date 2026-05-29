@@ -10,7 +10,7 @@
     },
     "players": {
       "$playerId": {
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || (!data.exists() && newData.child('ownerUid').val() === auth.uid) || data.child('ownerUid').val() === auth.uid || (!data.child('ownerUid').exists() && newData.child('ownerUid').val() === auth.uid))",
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || newData.child('ownerUid').val() === auth.uid)",
         ".validate": "newData.hasChildren(['id', 'name'])"
       }
     },
