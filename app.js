@@ -1183,7 +1183,9 @@ window.tryAdmin = async function() {
     try {
       const user = await ensureAnonymousAuth();
       if(user) await db.ref(`admins/${user.uid}`).set(true);
-    } catch(e) {}
+    } catch(e) {
+      showToast("Admin local OK, mas sem permissão no Firebase (verifique as regras)", "err");
+    }
     showToast("Admin autenticado!");
     renderAdmin();
   } else {
