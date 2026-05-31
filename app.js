@@ -1180,7 +1180,10 @@ window.tryAdmin = async function() {
   const pass = document.getElementById("admin-pass").value;
   if(pass === ADMIN_PASSWORD) {
     adminUnlocked = true;
-    try { await ensureAnonymousAuth(); } catch(e) {}
+    try {
+      const user = await ensureAnonymousAuth();
+      if(user) await db.ref(`admins/${user.uid}`).set(true);
+    } catch(e) {}
     showToast("Admin autenticado!");
     renderAdmin();
   } else {
