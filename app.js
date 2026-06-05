@@ -586,7 +586,7 @@ window.selectPlayer = function(id) {
 // ── GAME ──────────────────────────────────────────────────────────────────
 function renderGame() {
   if(!currentPlayer) return;
-  const isMyScreen = !myPlayerId || currentPlayer.id === myPlayerId;
+  const isMyScreen = !!myPlayerId && currentPlayer.id === myPlayerId;
   const saved = guesses[currentPlayer.id] || {};
   const pts = playerTotalPts(currentPlayer.id);
 
@@ -777,7 +777,7 @@ window.scheduleAutoSaveGuess = function(mid) {
 
 window.autoSaveGuess = async function(mid) {
   if(!currentPlayer) return;
-  if(myPlayerId && currentPlayer.id !== myPlayerId) return;
+  if(!myPlayerId || currentPlayer.id !== myPlayerId) return;
   const hi = document.querySelector(`.score-inp[data-mid="${mid}"][data-side="home"]`);
   const ai = document.querySelector(`.score-inp[data-mid="${mid}"][data-side="away"]`);
   if(!hi || !ai) return;
