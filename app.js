@@ -341,11 +341,14 @@ function matchDateKey(match) {
   return `2026${String(month).padStart(2,'0')}${String(day).padStart(2,'0')}`;
 }
 function findAutoResultFor(match, apiMatches) {
-  return apiMatches.find(item => {
+  for (const item of apiMatches) {
     const r = normalizeApiMatch(item);
-    if(!r.home || !r.away || !Number.isInteger(r.homeScore) || !Number.isInteger(r.awayScore)) return false;
-    return isFinalStatus(r.status) && sameTeam(match.home, r.home) && sameTeam(match.away, r.away);
-  });
+    if(!r.home || !r.away || !Number.isInteger(r.homeScore) || !Number.isInteger(r.awayScore)) continue;
+    if(!isFinalStatus(r.status)) continue;
+    if(sameTeam(match.home, r.home) && sameTeam(match.away, r.away)) return {item, swapped:false};
+    if(sameTeam(match.home, r.away) && sameTeam(match.away, r.home)) return {item, swapped:true};
+  }
+  return null;
 }
 function setAutoResultsStatus(text) {
   autoResultsStatus = text;
@@ -383,9 +386,9 @@ async function runAutoResultSync(force=false) {
     pending.forEach(m => {
       const found = findAutoResultFor(m, apiMatches);
       if(!found) return;
-      const r = normalizeApiMatch(found);
-      updates[`results/${m.id}/home`] = r.homeScore;
-      updates[`results/${m.id}/away`] = r.awayScore;
+      const r = normalizeApiMatch(found.item);
+      updates[`results/${m.id}/home`] = found.swapped ? r.awayScore : r.homeScore;
+      updates[`results/${m.id}/away`] = found.swapped ? r.homeScore : r.awayScore;
     });
     localStorage.setItem('bcp_auto_results_last', String(now));
     if(Object.keys(updates).length) {
@@ -461,7 +464,9 @@ function renderHome() {
   const played = matches.filter(m=>m.realHome!==null).length;
   let playersHTML = "";
   if(players.length > 0) {
-    const filteredPlayers = players.filter(p => !homePlayerSearch || normalizeName(p.name).includes(normalizeName(homePlayerSearch)));
+    const filteredPlayers = players
+      .filter(p => !homePlayerSearch || normalizeName(p.name).includes(normalizeName(homePlayerSearch)))
+      .sort((a, b) => playerTotalPts(b.id) - playerTotalPts(a.id));
     playersHTML = `<div class="card"><div class="label"><span class="live-dot"></span>PARTICIPANTES AO VIVO</div>
       <input class="inp" value="${escapeHtml(homePlayerSearch)}" placeholder="Buscar participante..." oninput="setHomePlayerSearch(this.value)" style="margin-bottom:10px"/>`;
     filteredPlayers.forEach(p => {
