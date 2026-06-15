@@ -943,7 +943,7 @@ function renderRanking() {
     localStorage.setItem('bcp_rank_order', JSON.stringify(newOrder));
     prevRankingOrder = newOrder;
   } else {
-    const done = [...matches,...knockoutMatches].filter(m=>m.realHome!==null);
+    const done = [...matches,...knockoutMatches].filter(m=>m.realHome!==null).sort((a,b)=>matchTime(b)-matchTime(a));
     if(done.length===0) {
       content = `<div style="text-align:center;color:#6b7a8c;padding:60px;font-size:13px">Nenhum resultado inserido ainda</div>`;
     } else {
