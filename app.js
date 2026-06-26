@@ -737,9 +737,9 @@ function renderGame() {
         <div class="match-teams-row">
           <div class="team-side"><span style="font-size:20px;flex-shrink:0">${m.homeFlag}</span><span class="team-name">${homeD}</span></div>
           <div class="score-box">
-            <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2); scheduleAutoSaveGuess(${m.id})" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
+            <input class="score-inp" data-mid="${m.id}" data-side="home" value="${hval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" onfocus="this.select()" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2); scheduleAutoSaveGuess(${m.id})" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
             <span style="color:#4a5a6e;font-weight:700">×</span>
-            <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2); scheduleAutoSaveGuess(${m.id})" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
+            <input class="score-inp" data-mid="${m.id}" data-side="away" value="${aval}" placeholder="${!teamsSet?'—':canSee?'0':'?'}" onfocus="this.select()" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,2); scheduleAutoSaveGuess(${m.id})" inputmode="numeric"${inputDisabled?" disabled":` onblur="autoSaveGuess(${m.id})"`}/>
           </div>
           <div class="team-side" style="justify-content:flex-end"><span class="team-name" style="text-align:right">${awayD}</span><span style="font-size:20px;flex-shrink:0">${m.awayFlag}</span></div>
         </div>
@@ -796,6 +796,16 @@ window.autoSaveGuess = async function(mid) {
   try { await ensurePlayerOwner(currentPlayer); } catch(e) { showToast("Erro de autenticação","err"); return; }
   try {
     await db.ref(`guesses/${currentPlayer.id}/${mid}`).set({home:+hi.value, away:+ai.value});
+    const logEntry = {
+      playerId: currentPlayer.id,
+      playerName: currentPlayer.name,
+      matchId: mid,
+      prev: prev !== undefined && prev !== null ? {home: prev.home, away: prev.away} : null,
+      next: {home: +hi.value, away: +ai.value},
+      uid: authUser?.uid || null,
+      ts: Date.now()
+    };
+    db.ref(`audit_log`).push(logEntry).catch(()=>{});
   } catch (err) {
     showToast("Nao foi possivel salvar. Verifique a conexao e o Firebase.","err");
     return;
@@ -1140,7 +1150,8 @@ function renderAdmin() {
         ['participantes','Participantes'],
         ['resultados','Resultados'],
         ['eliminatoria','Eliminatoria'],
-        ['config','Config']
+        ['config','Config'],
+        ['auditoria','🔍 Auditoria']
       ].map(([code,label]) => `<button class="group-btn${adminTab===code?' active':''}" onclick="setAdminTab('${code}')">${label}</button>`).join('')}
     </div>`;
   const adminUid = auth.currentUser?.uid || '(faça login como admin para ver)';
@@ -1163,7 +1174,9 @@ function renderAdmin() {
         <button class="btn-gold" onclick="saveGroupResults()">💾 Salvar Resultados Grupos</button>`
       : adminTab === 'eliminatoria'
         ? `${teamsCard}${koResultsCard}`
-        : `${champCard}${autoResultsCard}${authSetupCard}`;
+        : adminTab === 'auditoria'
+          ? `<div class="card"><div class="label">LOG DE ALTERAÇÕES DE PALPITES</div><div id="audit-log-content" style="font-size:12px;color:#8896a8;text-align:center;padding:20px">Carregando...</div></div>`
+          : `${champCard}${autoResultsCard}${authSetupCard}`;
 
   document.getElementById("screen-admin").innerHTML = `
     <div class="screen">
@@ -1179,6 +1192,42 @@ function renderAdmin() {
 window.setAdminTab = function(tab) {
   adminTab = tab;
   renderAdmin();
+  if(tab === 'auditoria') loadAuditLog();
+};
+
+window.loadAuditLog = async function() {
+  const el = document.getElementById('audit-log-content');
+  if(!el) return;
+  try {
+    const snap = await db.ref('audit_log').orderByChild('ts').limitToLast(100).once('value');
+    const entries = [];
+    snap.forEach(child => entries.push(child.val()));
+    entries.reverse();
+    if(!entries.length) { el.innerHTML = '<span style="color:#6b7a8c">Nenhuma alteração registrada ainda.</span>'; return; }
+    const matchLabel = id => {
+      const m = [...matches,...knockoutMatches].find(m=>m.id===id);
+      if(!m) return `Jogo #${id}`;
+      const ph = m.phase ? (KNOCKOUT_PHASES.find(p=>p.code===m.phase)?.label||m.phase) : `Grupo ${m.group}`;
+      return `${ph} • ${m.date} ${m.home} × ${m.away}`;
+    };
+    el.innerHTML = entries.map(e => {
+      const d = new Date(e.ts);
+      const timeStr = `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
+      const prevStr = e.prev !== null ? `${e.prev.home}×${e.prev.away}` : '—';
+      const nextStr = `${e.next.home}×${e.next.away}`;
+      const changed = e.prev !== null;
+      return `<div style="border-top:1px solid #0d1525;padding:8px 0;display:flex;flex-direction:column;gap:2px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:700;color:#fff">${escapeHtml(e.playerName||e.playerId)}</span>
+          <span style="color:#4a5a6e;font-size:11px">${timeStr}</span>
+        </div>
+        <div style="color:#8896a8;font-size:11px">${escapeHtml(matchLabel(e.matchId))}</div>
+        <div style="font-size:12px">${changed?`<span style="color:#ff5252">${prevStr}</span> → `:''}<span style="color:#00e676">${nextStr}</span>${changed?'':' <span style="color:#4a5a6e">(novo)</span>'}</div>
+      </div>`;
+    }).join('');
+  } catch(err) {
+    el.innerHTML = '<span style="color:#ff5252">Erro ao carregar log. Verifique as regras do Firebase.</span>';
+  }
 };
 
 window.tryAdmin = async function() {
