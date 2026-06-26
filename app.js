@@ -1565,5 +1565,21 @@ document.addEventListener('focusin', e => {
   }
 });
 
+// ── One-time fix: corrige palpites errados do Bruninho (bug do "0" colado) ──
+(async function fixBruninhoGuesses() {
+  const snap = await db.ref('players').orderByChild('name').equalTo('Bruninho').once('value');
+  snap.forEach(child => {
+    const pid = child.key;
+    const fix = async (mid, home, away) => {
+      const g = (await db.ref(`guesses/${pid}/${mid}`).once('value')).val();
+      if(g && g.home === home && g.away === 10) {
+        await db.ref(`guesses/${pid}/${mid}`).set({home, away});
+      }
+    };
+    fix(18, 3, 1); // França×Senegal: 3×10 → 3×1
+    fix(54, 2, 1); // África do Sul×Coreia: 2×10 → 2×1
+  });
+})();
+
 initFirebase();
 renderHome();
