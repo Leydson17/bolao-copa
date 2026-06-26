@@ -239,7 +239,10 @@ function matchStatusBadge(m) {
   if(isLocked(m)) return '<span class="status-badge status-locked">Bloqueado</span>';
   return '<span class="status-badge status-wait">Aguardando</span>';
 }
-function isChampionLocked() { return Date.now() >= Date.UTC(2026, 5, 11, 19, 0); }
+function isChampionLocked() {
+  const firstR16 = BASE_KNOCKOUT.filter(m=>m.phase==='R16').sort((a,b)=>matchTime(a)-matchTime(b))[0];
+  return firstR16 ? Date.now() >= matchTime(firstR16) : false;
+}
 function champPts(pid) { return (realChampion && championGuesses[pid] === realChampion) ? 30 : 0; }
 function playerStats(pid) {
   const pg = guesses[pid] || {};
