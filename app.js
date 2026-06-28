@@ -1652,26 +1652,18 @@ document.addEventListener('focusin', e => {
 });
 
 
-// ── One-time: registra palpite do Joshua no jogo 101 (África do Sul×Canadá) ──
-(async function setJoshuaMatch101() {
-  const snap = await db.ref('players').orderByChild('name').equalTo('Joshua').once('value');
-  snap.forEach(child => {
-    const pid = child.key;
-    db.ref(`guesses/${pid}/101`).once('value').then(g => {
-      if(!g.val()) db.ref(`guesses/${pid}/101`).set({home:2, away:1});
+// ── One-time: registra palpites no jogo 101 (África do Sul×Canadá) ──
+(async function setGuessesMatch101() {
+  const fixes = [
+    {name:'Joshua', home:2, away:1},
+    {name:'trick',  home:1, away:2},
+  ];
+  for(const {name, home, away} of fixes) {
+    const snap = await db.ref('players').orderByChild('name').equalTo(name).once('value');
+    snap.forEach(child => {
+      db.ref(`guesses/${child.key}/101`).set({home, away});
     });
-  });
-})();
-
-// ── One-time: registra palpite do Trick no jogo 101 (África do Sul×Canadá) ──
-(async function setTrickMatch101() {
-  const snap = await db.ref('players').orderByChild('name').equalTo('trick').once('value');
-  snap.forEach(child => {
-    const pid = child.key;
-    db.ref(`guesses/${pid}/101`).once('value').then(g => {
-      if(!g.val()) db.ref(`guesses/${pid}/101`).set({home:1, away:2});
-    });
-  });
+  }
 })();
 
 initFirebase();
