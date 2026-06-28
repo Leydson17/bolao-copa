@@ -1653,17 +1653,9 @@ document.addEventListener('focusin', e => {
 
 
 // ── One-time: registra palpites no jogo 101 (África do Sul×Canadá) ──
-(async function setGuessesMatch101() {
-  const fixes = [
-    {name:'Joshua', home:2, away:1},
-    {name:'trick',  home:1, away:2},
-  ];
-  for(const {name, home, away} of fixes) {
-    const snap = await db.ref('players').orderByChild('name').equalTo(name).once('value');
-    snap.forEach(child => {
-      db.ref(`guesses/${child.key}/101`).set({home, away});
-    });
-  }
+(function setGuessesMatch101() {
+  db.ref('guesses/p_1779851793982/101').set({home:1, away:2}); // trick
+  db.ref('guesses/p_1780964544866/101').set({home:2, away:1}); // Joshua
 })();
 
 initFirebase();
