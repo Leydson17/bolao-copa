@@ -181,6 +181,7 @@ let pendingPlayerId = null;
 let editingPlayerId = null;
 let rawKnockoutTeams = {};
 let rawResults = {};
+let penalties = {};
 let championGuesses = {};
 let realChampion = null;
 let rankingView = "players";
@@ -277,7 +278,8 @@ function rebuildKnockout() {
 }
 function playerTotalPts(pid) {
   const pg = guesses[pid] || {};
-  return [...matches,...knockoutMatches].reduce((a,m)=>{ const g=pg[m.id]; return g?a+calcPts(g,m):a; },0) + champPts(pid);
+  const raw = [...matches,...knockoutMatches].reduce((a,m)=>{ const g=pg[m.id]; return g?a+calcPts(g,m):a; },0) + champPts(pid);
+  return raw - (penalties[pid] || 0);
 }
 function playerFilled(pid) {
   const pg = guesses[pid] || {};
@@ -467,6 +469,10 @@ function initFirebase() {
   db.ref("champion").on("value", snap => {
     realChampion = snap.val() || null;
     rerender(["game","ranking","admin"]);
+  });
+  db.ref("penalties").on("value", snap => {
+    penalties = snap.val() || {};
+    rerender(["home","game","ranking"]);
   });
 }
 
@@ -687,6 +693,7 @@ function renderGame() {
         </div>
       </div>
       <div style="text-align:center;font-size:12px;color:#8896a8">${st.total} jogo(s) apurado(s) • Aproveitamento: <b style="color:#FFD700">${pct}%</b></div>
+      ${(penalties[currentPlayer.id]||0)>0?`<div style="text-align:center;font-size:12px;color:#ff5252;margin-top:6px;font-weight:700">⚠️ Punição por trapaça: -${penalties[currentPlayer.id]}pts</div>`:''}
     </div>`;
   }
 
@@ -814,7 +821,7 @@ window.autoSaveGuess = async function(mid) {
       prev: prev !== undefined && prev !== null ? {home: prev.home, away: prev.away} : null,
       next: {home: +hi.value, away: +ai.value},
       uid: authUser?.uid || null,
-      ts: Date.now()
+      ts: firebase.database.ServerValue.TIMESTAMP
     };
     db.ref(`audit_log`).push(logEntry).catch(()=>{});
   } catch (err) {
@@ -957,6 +964,7 @@ function renderRanking() {
             </div>
             <div style="text-align:right;flex-shrink:0">
               <div style="font-size:24px;font-weight:900;color:#FFD700;line-height:1">${p.pts}</div>
+              ${(penalties[p.id]||0)>0?`<div style="font-size:10px;color:#ff5252;font-weight:700">⚠️ -${penalties[p.id]}pts</div>`:''}
               <div style="font-size:10px;color:#6b7a8c">${playerFilled(p.id)}/${guessableTotal}</div>
             </div>
           </div>`;
@@ -1212,7 +1220,7 @@ window.loadAuditLog = async function(filterSuspect = false) {
   try {
     const snap = await db.ref('audit_log').orderByChild('ts').limitToLast(200).once('value');
     const entries = [];
-    snap.forEach(child => entries.push(child.val()));
+    snap.forEach(child => entries.push({...child.val(), _key: child.key}));
     entries.reverse();
     if(!entries.length) { el.innerHTML = '<span style="color:#6b7a8c">Nenhuma alteração registrada ainda.</span>'; return; }
     const getMatch = id => [...matches,...knockoutMatches].find(m=>m.id===id);
@@ -1242,6 +1250,11 @@ window.loadAuditLog = async function(filterSuspect = false) {
         const changed = e.prev !== null;
         const border = e.isSuspect ? '2px solid #ff525288' : '1px solid #0d1525';
         const badge = e.isSuspect ? `<span style="background:#ff525222;color:#ff5252;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;border:1px solid #ff525244">⚠️ SUSPEITO</span>` : '';
+        const revertBtn = e.isSuspect && e.prev !== null
+          ? e.reverted
+            ? `<span style="color:#4a5a6e;font-size:11px;margin-top:4px">✅ Revertido</span>`
+            : `<button onclick="revertGuess('${e.playerId}',${e.matchId},${e.prev.home},${e.prev.away},'${e._key}','${escapeHtml(e.playerName||e.playerId)}')" style="background:#3d1515;color:#ff5252;border:1px solid #ff525255;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px;margin-top:4px">↩ Reverter para ${prevStr} e punir -15pts</button>`
+          : '';
         return `<div style="border-top:${border};padding:8px 0;display:flex;flex-direction:column;gap:2px${e.isSuspect?' background:#ff52520a;margin:0 -8px;padding-left:8px;padding-right:8px':''}">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
             <div style="display:flex;align-items:center;gap:6px"><span style="font-weight:700;color:#fff">${escapeHtml(e.playerName||e.playerId)}</span>${badge}</div>
@@ -1249,10 +1262,24 @@ window.loadAuditLog = async function(filterSuspect = false) {
           </div>
           <div style="color:#8896a8;font-size:11px">${escapeHtml(matchLabel(e.matchId))}</div>
           <div style="font-size:12px">${changed?`<span style="color:#ff5252">${prevStr}</span> → `:''}<span style="color:#00e676">${nextStr}</span>${changed?'':' <span style="color:#4a5a6e">(novo)</span>'}</div>
+          ${revertBtn}
         </div>`;
       }).join(''));
   } catch(err) {
     el.innerHTML = '<span style="color:#ff5252">Erro ao carregar log. Verifique as regras do Firebase.</span>';
+  }
+};
+
+window.revertGuess = async function(playerId, matchId, home, away, logKey, playerName) {
+  if(!confirm(`Reverter palpite de ${playerName||playerId} para ${home}×${away} e aplicar -15pts de punição?`)) return;
+  try {
+    await db.ref(`guesses/${playerId}/${matchId}`).set({home, away});
+    await db.ref(`penalties/${playerId}`).transaction(cur => (cur || 0) + 15);
+    await db.ref(`audit_log/${logKey}`).update({reverted: true});
+    showToast(`Palpite revertido e -15pts aplicados a ${playerName||playerId} ✅`);
+    loadAuditLog(true);
+  } catch(e) {
+    showToast("Erro ao reverter. Verifique permissões do Firebase.", "err");
   }
 };
 
