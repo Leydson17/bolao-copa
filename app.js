@@ -1175,6 +1175,11 @@ function renderAdmin() {
       ].map(([code,label]) => `<button class="group-btn${adminTab===code?' active':''}" onclick="setAdminTab('${code}')">${label}</button>`).join('')}
     </div>`;
   const adminUid = auth.currentUser?.uid || '(faça login como admin para ver)';
+  const matchTimesCard = `<div class="card">
+    <div class="label">🔒 TRAVA SERVER-SIDE DE PALPITES</div>
+    <p style="font-size:12px;color:#8896a8;line-height:1.5;margin-bottom:8px">Semeia <b>/match_times</b> no Firebase com o horário de cada jogo. As Security Rules usam esse dado para bloquear palpites no servidor após o início do jogo.</p>
+    <button onclick="syncMatchTimes()" class="btn btn-outline" style="width:100%;padding:9px">⏱️ Sincronizar horários dos jogos</button>
+  </div>`;
   const authSetupCard = `<div class="card">
     <div class="label">AUTENTICAÇÃO DO ADMIN</div>
     <p style="font-size:12px;color:#8896a8;line-height:1.5;margin-bottom:8px">Para salvar resultados, adicione seu UID no Firebase Console → Realtime Database → <b>/admins/{UID}</b> = <b>true</b>.</p>
@@ -1196,7 +1201,7 @@ function renderAdmin() {
         ? `${teamsCard}${koResultsCard}`
         : adminTab === 'auditoria'
           ? `<div class="card"><div class="label">LOG DE ALTERAÇÕES DE PALPITES</div><div id="audit-log-content" style="font-size:12px;color:#8896a8;text-align:center;padding:20px">Carregando...</div></div>`
-          : `${champCard}${autoResultsCard}${authSetupCard}`;
+          : `${champCard}${autoResultsCard}${authSetupCard}${matchTimesCard}`;
 
   document.getElementById("screen-admin").innerHTML = `
     <div class="screen">
@@ -1335,6 +1340,17 @@ window.autoSaveAdminResult = async function(mid, source) {
     delete savedAdminResultFeedback[mid];
     if(document.getElementById("screen-admin").classList.contains("active")) renderAdmin();
   }, 1400);
+};
+
+window.syncMatchTimes = async function() {
+  try {
+    const times = {};
+    [...matches, ...knockoutMatches].forEach(m => { times[m.id] = matchTime(m); });
+    await db.ref('match_times').set(times);
+    showToast(`${Object.keys(times).length} horários sincronizados ✅`);
+  } catch(e) {
+    showToast('Erro ao sincronizar. Verifique permissões do Firebase.', 'err');
+  }
 };
 
 window.adminResetPass = async function(id, name) {
