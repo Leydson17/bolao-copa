@@ -1652,11 +1652,6 @@ document.addEventListener('focusin', e => {
 });
 
 
-// ── One-time: registra palpites no jogo 101 (África do Sul×Canadá) ──
-(function setGuessesMatch101() {
-  db.ref('guesses/p_1779851793982/101').set({home:1, away:2}); // trick
-  db.ref('guesses/p_1780964544866/101').set({home:2, away:1}); // Joshua
-})();
 
 initFirebase();
 renderHome();
