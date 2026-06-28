@@ -131,14 +131,22 @@ const KNOCKOUT_PHASES = [
   {code:"3P",label:"3º Lugar"},{code:"FIN",label:"🏆 Final"},
 ];
 const BASE_KNOCKOUT = [
-  {id:101,phase:"R32",date:"29/06",time:"12:00"},{id:102,phase:"R32",date:"29/06",time:"16:00"},
-  {id:103,phase:"R32",date:"29/06",time:"20:00"},{id:104,phase:"R32",date:"29/06",time:"23:00"},
-  {id:105,phase:"R32",date:"30/06",time:"12:00"},{id:106,phase:"R32",date:"30/06",time:"16:00"},
-  {id:107,phase:"R32",date:"30/06",time:"20:00"},{id:108,phase:"R32",date:"30/06",time:"23:00"},
-  {id:109,phase:"R32",date:"01/07",time:"12:00"},{id:110,phase:"R32",date:"01/07",time:"16:00"},
-  {id:111,phase:"R32",date:"01/07",time:"20:00"},{id:112,phase:"R32",date:"01/07",time:"23:00"},
-  {id:113,phase:"R32",date:"02/07",time:"12:00"},{id:114,phase:"R32",date:"02/07",time:"16:00"},
-  {id:115,phase:"R32",date:"02/07",time:"20:00"},{id:116,phase:"R32",date:"02/07",time:"23:00"},
+  {id:101,phase:"R32",date:"28/06",time:"16:00",defaultHome:"África do Sul",defaultAway:"Canadá"},
+  {id:102,phase:"R32",date:"29/06",time:"14:00",defaultHome:"Brasil",defaultAway:"Japão"},
+  {id:103,phase:"R32",date:"29/06",time:"17:30",defaultHome:"Alemanha",defaultAway:"Paraguai"},
+  {id:104,phase:"R32",date:"29/06",time:"21:00",defaultHome:"Holanda",defaultAway:"Marrocos"},
+  {id:105,phase:"R32",date:"30/06",time:"13:00",defaultHome:"Costa do Marfim",defaultAway:"Noruega"},
+  {id:106,phase:"R32",date:"30/06",time:"18:00",defaultHome:"França",defaultAway:"Suécia"},
+  {id:107,phase:"R32",date:"30/06",time:"21:00",defaultHome:"México",defaultAway:"Equador"},
+  {id:108,phase:"R32",date:"01/07",time:"13:00",defaultHome:"Inglaterra",defaultAway:"RD Congo"},
+  {id:109,phase:"R32",date:"01/07",time:"17:00",defaultHome:"Bélgica",defaultAway:"Senegal"},
+  {id:110,phase:"R32",date:"01/07",time:"21:00",defaultHome:"Estados Unidos",defaultAway:"Bósnia"},
+  {id:111,phase:"R32",date:"02/07",time:"16:00",defaultHome:"Espanha",defaultAway:"Áustria"},
+  {id:112,phase:"R32",date:"02/07",time:"20:00",defaultHome:"Portugal",defaultAway:"Croácia"},
+  {id:113,phase:"R32",date:"03/07",time:"00:00",defaultHome:"Suíça",defaultAway:"Argélia"},
+  {id:114,phase:"R32",date:"03/07",time:"14:00",defaultHome:"Austrália",defaultAway:"Egito"},
+  {id:115,phase:"R32",date:"03/07",time:"19:00",defaultHome:"Argentina",defaultAway:"Cabo Verde"},
+  {id:116,phase:"R32",date:"03/07",time:"21:30",defaultHome:"Colômbia",defaultAway:"Gana"},
   {id:117,phase:"R16",date:"04/07",time:"12:00"},{id:118,phase:"R16",date:"04/07",time:"20:00"},
   {id:119,phase:"R16",date:"05/07",time:"12:00"},{id:120,phase:"R16",date:"05/07",time:"20:00"},
   {id:121,phase:"R16",date:"06/07",time:"12:00"},{id:122,phase:"R16",date:"06/07",time:"20:00"},
@@ -257,8 +265,8 @@ function playerStats(pid) {
 }
 function rebuildKnockout() {
   knockoutMatches = BASE_KNOCKOUT.map(m => {
-    const home = rawKnockoutTeams[m.id]?.home || "?";
-    const away = rawKnockoutTeams[m.id]?.away || "?";
+    const home = rawKnockoutTeams[m.id]?.home || m.defaultHome || "?";
+    const away = rawKnockoutTeams[m.id]?.away || m.defaultAway || "?";
     return { ...m, home, away,
       homeFlag: home!=="?" ? fl(home) : "🏳️",
       awayFlag: away!=="?" ? fl(away) : "🏳️",
@@ -1198,36 +1206,51 @@ window.setAdminTab = function(tab) {
   if(tab === 'auditoria') loadAuditLog();
 };
 
-window.loadAuditLog = async function() {
+window.loadAuditLog = async function(filterSuspect = false) {
   const el = document.getElementById('audit-log-content');
   if(!el) return;
   try {
-    const snap = await db.ref('audit_log').orderByChild('ts').limitToLast(100).once('value');
+    const snap = await db.ref('audit_log').orderByChild('ts').limitToLast(200).once('value');
     const entries = [];
     snap.forEach(child => entries.push(child.val()));
     entries.reverse();
     if(!entries.length) { el.innerHTML = '<span style="color:#6b7a8c">Nenhuma alteração registrada ainda.</span>'; return; }
+    const getMatch = id => [...matches,...knockoutMatches].find(m=>m.id===id);
     const matchLabel = id => {
-      const m = [...matches,...knockoutMatches].find(m=>m.id===id);
+      const m = getMatch(id);
       if(!m) return `Jogo #${id}`;
       const ph = m.phase ? (KNOCKOUT_PHASES.find(p=>p.code===m.phase)?.label||m.phase) : `Grupo ${m.group}`;
       return `${ph} • ${m.date} ${m.home} × ${m.away}`;
     };
-    el.innerHTML = entries.map(e => {
-      const d = new Date(e.ts);
-      const timeStr = `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
-      const prevStr = e.prev !== null ? `${e.prev.home}×${e.prev.away}` : '—';
-      const nextStr = `${e.next.home}×${e.next.away}`;
-      const changed = e.prev !== null;
-      return `<div style="border-top:1px solid #0d1525;padding:8px 0;display:flex;flex-direction:column;gap:2px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-weight:700;color:#fff">${escapeHtml(e.playerName||e.playerId)}</span>
-          <span style="color:#4a5a6e;font-size:11px">${timeStr}</span>
-        </div>
-        <div style="color:#8896a8;font-size:11px">${escapeHtml(matchLabel(e.matchId))}</div>
-        <div style="font-size:12px">${changed?`<span style="color:#ff5252">${prevStr}</span> → `:''}<span style="color:#00e676">${nextStr}</span>${changed?'':' <span style="color:#4a5a6e">(novo)</span>'}</div>
-      </div>`;
-    }).join('');
+    const withFlags = entries.map(e => {
+      const m = getMatch(e.matchId);
+      const start = m ? matchTime(m) : null;
+      return {...e, isSuspect: start !== null && e.ts >= start};
+    });
+    const suspects = withFlags.filter(e => e.isSuspect);
+    const toShow = filterSuspect ? suspects : withFlags;
+    const filterBtn = filterSuspect
+      ? `<button onclick="loadAuditLog(false)" style="background:#1e2d3d;color:#8896a8;border:1px solid #2a3a4e;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px">Mostrar todos (${withFlags.length})</button>`
+      : `<button onclick="loadAuditLog(true)" style="background:#3d1515;color:#ff5252;border:1px solid #ff525255;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px">⚠️ Apenas suspeitos (${suspects.length})</button>`;
+    el.innerHTML = `<div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">${filterBtn}${suspects.length>0?`<span style="color:#ff5252;font-size:11px;font-weight:700">${suspects.length} palpite(s) alterado(s) após início do jogo</span>`:''}</div>` +
+      (toShow.length === 0 ? '<span style="color:#6b7a8c">Nenhuma entrada suspeita encontrada.</span>' :
+      toShow.map(e => {
+        const d = new Date(e.ts);
+        const timeStr = `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
+        const prevStr = e.prev !== null ? `${e.prev.home}×${e.prev.away}` : '—';
+        const nextStr = `${e.next.home}×${e.next.away}`;
+        const changed = e.prev !== null;
+        const border = e.isSuspect ? '2px solid #ff525288' : '1px solid #0d1525';
+        const badge = e.isSuspect ? `<span style="background:#ff525222;color:#ff5252;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;border:1px solid #ff525244">⚠️ SUSPEITO</span>` : '';
+        return `<div style="border-top:${border};padding:8px 0;display:flex;flex-direction:column;gap:2px${e.isSuspect?' background:#ff52520a;margin:0 -8px;padding-left:8px;padding-right:8px':''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-weight:700;color:#fff">${escapeHtml(e.playerName||e.playerId)}</span>${badge}</div>
+            <span style="color:#4a5a6e;font-size:11px;white-space:nowrap">${timeStr}</span>
+          </div>
+          <div style="color:#8896a8;font-size:11px">${escapeHtml(matchLabel(e.matchId))}</div>
+          <div style="font-size:12px">${changed?`<span style="color:#ff5252">${prevStr}</span> → `:''}<span style="color:#00e676">${nextStr}</span>${changed?'':' <span style="color:#4a5a6e">(novo)</span>'}</div>
+        </div>`;
+      }).join(''));
   } catch(err) {
     el.innerHTML = '<span style="color:#ff5252">Erro ao carregar log. Verifique as regras do Firebase.</span>';
   }
@@ -1564,22 +1587,6 @@ document.addEventListener('focusin', e => {
     setTimeout(() => e.target.scrollIntoView({block:'nearest',behavior:'instant'}), 350);
   }
 });
-
-// ── One-time fix: corrige palpites errados do Bruninho (bug do "0" colado) ──
-(async function fixBruninhoGuesses() {
-  const snap = await db.ref('players').orderByChild('name').equalTo('Bruninho').once('value');
-  snap.forEach(child => {
-    const pid = child.key;
-    const fix = async (mid, home, away) => {
-      const g = (await db.ref(`guesses/${pid}/${mid}`).once('value')).val();
-      if(g && g.home === home && g.away === 10) {
-        await db.ref(`guesses/${pid}/${mid}`).set({home, away});
-      }
-    };
-    fix(18, 3, 1); // França×Senegal: 3×10 → 3×1
-    fix(54, 2, 1); // África do Sul×Coreia: 2×10 → 2×1
-  });
-})();
 
 initFirebase();
 renderHome();
