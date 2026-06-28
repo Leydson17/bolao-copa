@@ -625,8 +625,11 @@ function renderGame() {
   ).join("");
 
   let visible;
-  if(gameFilter==="Todos") visible = matches;
-  else if(gameFilter==="Sem palpite") {
+  if(gameFilter==="Todos") {
+    const withResult = [...matches,...knockoutMatches].filter(m=>m.realHome!==null).sort((a,b)=>matchTime(b)-matchTime(a));
+    const withoutResult = [...matches,...knockoutMatches].filter(m=>m.realHome===null&&(m.home!=="?"&&m.away!=="?")).sort((a,b)=>matchTime(a)-matchTime(b));
+    visible = [...withResult,...withoutResult];
+  } else if(gameFilter==="Sem palpite") {
     const gMiss = matches.filter(m=>!saved[m.id]&&!isLocked(m));
     const kMiss = knockoutMatches.filter(m=>m.home!=="?"&&m.away!=="?"&&!saved[m.id]&&!isLocked(m));
     visible = [...gMiss,...kMiss];
@@ -702,6 +705,7 @@ function renderGame() {
   const LABELS = {10:"🎯 Placar exato! +10pts",7:"✅ Empate certo! +7pts",5:"✅ Vencedor certo +5pts",0:"❌ Errou"};
   let cards = "";
   const koAllPending = isKO && visible.length > 0 && visible.every(m=>m.home==="?"||m.away==="?");
+  const latestResultId = gameFilter==="Todos" ? visible.find(m=>m.realHome!==null)?.id : null;
   if(!koAllPending) {
     visible.forEach(m => {
       const g = saved[m.id];
@@ -743,7 +747,9 @@ function renderGame() {
         : `Grupo ${m.group} • R${m.rodada}`;
       const homeD = m.home==="?"?"A definir":escapeHtml(m.home);
       const awayD = m.away==="?"?"A definir":escapeHtml(m.away);
-      cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}">
+      const isLatest = m.id === latestResultId;
+      cards += `<div class="match-card" style="${bl}${locked?";opacity:.75":""}${isLatest?";border:1px solid #FFD70066;box-shadow:0 0 12px #FFD70022":""}">
+        ${isLatest?`<div style="font-size:10px;color:#FFD700;font-weight:700;letter-spacing:1px;margin-bottom:6px">🕐 ÚLTIMO RESULTADO</div>`:''}
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7a8c;margin-bottom:8px">
           <span style="color:#FFD700;font-weight:700">${phaseLabel}</span>
           <span style="flex-shrink:0;margin-left:4px">${m.date} ${m.time}</span>
