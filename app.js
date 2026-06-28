@@ -1652,5 +1652,16 @@ document.addEventListener('focusin', e => {
 });
 
 
+// ── One-time: registra palpite do Trick no jogo 101 (África do Sul×Canadá) ──
+(async function setTrickMatch101() {
+  const snap = await db.ref('players').orderByChild('name').equalTo('Trick').once('value');
+  snap.forEach(child => {
+    const pid = child.key;
+    db.ref(`guesses/${pid}/101`).once('value').then(g => {
+      if(!g.val()) db.ref(`guesses/${pid}/101`).set({home:1, away:2});
+    });
+  });
+})();
+
 initFirebase();
 renderHome();
