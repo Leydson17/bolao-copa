@@ -1066,6 +1066,7 @@ function renderAdmin() {
           <span style="font-size:11px;color:#6b7a8c">${playerFilled(p.id)}/${guessableTotal}</span>
           <button onclick="editPlayer(${escapeJsArg(p.id)})" style="background:#1a2540;border:none;border-radius:8px;color:#aaa;padding:5px 10px;font-size:14px;cursor:pointer">✏️</button>
           <button onclick="resetPlayerOwner(${escapeJsArg(p.id)},${escapeJsArg(p.name)})" style="background:#1a2540;border:none;border-radius:8px;color:#aaa;padding:5px 10px;font-size:12px;cursor:pointer" title="Resetar sessão do dispositivo">🔗</button>
+          <button onclick="adminResetPass(${escapeJsArg(p.id)},${escapeJsArg(p.name)})" style="background:#1a2540;border:none;border-radius:8px;color:#aaa;padding:5px 10px;font-size:12px;cursor:pointer" title="Redefinir senha">🔑</button>
           <button onclick="deletePlayer(${escapeJsArg(p.id)},${escapeJsArg(p.name)})" style="background:#c62828;border:none;border-radius:8px;color:#fff;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
         </div>`;
       }).join('')}
@@ -1334,6 +1335,19 @@ window.autoSaveAdminResult = async function(mid, source) {
     delete savedAdminResultFeedback[mid];
     if(document.getElementById("screen-admin").classList.contains("active")) renderAdmin();
   }, 1400);
+};
+
+window.adminResetPass = async function(id, name) {
+  const newPass = prompt(`Nova senha para ${name}:`);
+  if(!newPass) return;
+  if(newPass.length < 3) { showToast('Senha muito curta (mín. 3 caracteres)', 'err'); return; }
+  try {
+    const fields = await makePasswordFields(newPass);
+    await db.ref(`players/${id}`).update({...fields, pass: null});
+    showToast(`Senha de ${name} redefinida ✅`);
+  } catch(e) {
+    showToast('Erro ao redefinir senha. Verifique permissões do Firebase.', 'err');
+  }
 };
 
 window.deletePlayer = async function(id, name) {
