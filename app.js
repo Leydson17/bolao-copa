@@ -663,7 +663,7 @@ function renderGame() {
   // ── Estatísticas ──
   const st = playerStats(currentPlayer.id);
   let statsHTML = "";
-  if(isMyScreen && st.total > 0) {
+  if(st.total > 0) {
     const maxPts = st.total * 10;
     const pct = Math.round(pts / maxPts * 100);
     statsHTML = `<div class="card">
