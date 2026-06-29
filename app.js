@@ -1653,8 +1653,6 @@ document.addEventListener('focusin', e => {
 
 
 
-// ── One-time: palpite Leydi jogo 101 (África do Sul×Canadá 1×2) ──
-db.ref('guesses/p_1780446764425/101').set({home:1, away:2});
 
 initFirebase();
 renderHome();
