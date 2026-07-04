@@ -1344,7 +1344,7 @@ window.autoSaveAdminResult = async function(mid, source) {
   }
   setTimeout(() => {
     delete savedAdminResultFeedback[mid];
-    if(document.getElementById("screen-admin").classList.contains("active")) renderAdmin();
+    rerender(["admin"]);
   }, 1400);
 };
 
