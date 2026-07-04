@@ -1654,19 +1654,22 @@ document.addEventListener('focusin', e => {
 });
 
 // ── One-time: palpite p_1779847664133 nas oitavas Marrocos×Canadá (2×0) ──
-(async function setGuessMarrocosCanada() {
-  const snap = await db.ref('knockout_teams').once('value');
-  const teams = snap.val() || {};
-  const match = BASE_KNOCKOUT.find(m => {
-    if(m.phase !== 'R16') return false;
-    const home = teams[m.id]?.home || m.defaultHome;
-    const away = teams[m.id]?.away || m.defaultAway;
-    return (home === 'Marrocos' && away === 'Canadá') || (home === 'Canadá' && away === 'Marrocos');
+(function watchGuessMarrocosCanada() {
+  const ref = db.ref('knockout_teams');
+  ref.on('value', snap => {
+    const teams = snap.val() || {};
+    const match = BASE_KNOCKOUT.find(m => {
+      if(m.phase !== 'R16') return false;
+      const home = teams[m.id]?.home || m.defaultHome;
+      const away = teams[m.id]?.away || m.defaultAway;
+      return (home === 'Marrocos' && away === 'Canadá') || (home === 'Canadá' && away === 'Marrocos');
+    });
+    if(!match) return;
+    ref.off();
+    const home = teams[match.id]?.home || match.defaultHome;
+    const score = home === 'Marrocos' ? {home:2, away:0} : {home:0, away:2};
+    db.ref(`guesses/p_1779847664133/${match.id}`).set(score);
   });
-  if(!match) return;
-  const home = teams[match.id]?.home || match.defaultHome;
-  const score = home === 'Marrocos' ? {home:2, away:0} : {home:0, away:2};
-  await db.ref(`guesses/p_1779847664133/${match.id}`).set(score);
 })();
 
 initFirebase();
