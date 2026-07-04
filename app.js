@@ -239,8 +239,10 @@ function isLocked(m) { return Date.now() >= matchTime(m); }
 function canEditGuess(m, isMyScreen) {
   return isMyScreen && m && m.home !== "?" && m.away !== "?" && Date.now() < matchTime(m);
 }
-function isLive(m) { const t = matchTime(m); const n = Date.now(); return n >= t && n < t + 9000000; }
-function isFinished(m) { return Date.now() >= matchTime(m) + 9000000; }
+// Mata-mata pode ir a prorrogação + pênaltis, então damos uma janela maior antes de considerar "Finalizado".
+function matchDurationMs(m) { return m.phase ? 12000000 : 9000000; }
+function isLive(m) { const t = matchTime(m); const n = Date.now(); return n >= t && n < t + matchDurationMs(m); }
+function isFinished(m) { return Date.now() >= matchTime(m) + matchDurationMs(m); }
 function matchStatusBadge(m) {
   if(m.realHome !== null && m.realAway !== null) return '<span class="status-badge status-done">Resultado inserido</span>';
   if(isLive(m)) return '<span class="status-badge status-live">Ao vivo</span>';
